@@ -51,6 +51,7 @@ public class AmountSelector implements CommandExecutor {
             Label num1000       = new Label(1, 0, 1, 1, Font.BIRCH_PLANKS);
             Label sign          = new Label(0, 0, 1, 1, Font.BIRCH_PLANKS);
             Label sell          = new Label(0,1,1,1,Font.BIRCH_PLANKS);
+            Label backToPallete = new Label(0,1,1,1,Font.BIRCH_PLANKS);
 
 
             OutlinePane itemPane = new OutlinePane(3, 2, 1, 1);

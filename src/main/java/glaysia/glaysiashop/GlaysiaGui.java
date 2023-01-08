@@ -75,13 +75,13 @@ public class GlaysiaGui implements CommandExecutor {
             AmountSelector amountSelector=new AmountSelector();
             player.closeInventory();
 
-            ((Player)sender).closeInventory();
+//            ((Player)sender).closeInventory();
 
             ChestGui gui = new ChestGui(4, "Select amount");
             amountSelector.onCommand(sender, command, label, args, gui, material);
 //            gui.show((Player)sender);
-
-//            itemPalette.update();
+//git push test
+            itemPalette.show((Player)sender);
         });
     }
 
