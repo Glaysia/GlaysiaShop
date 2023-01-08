@@ -1,0 +1,65 @@
+﻿name: Glaysiashop
+version: '${version}'
+main: glaysia.glaysiashop.Glaysiashop
+api-version: 1.19
+permissions:
+  gs.money:
+    description: money 명령어를 사용할 수 있습니다.
+commands:
+  gt:
+    description: 테스트 명령어
+    usage: /gt, /gtest 를 입력하십시오
+    aliases:
+      - gtest  
+  money_gs:
+    description: 현재 가진 돈을 출력합니다.
+    usage: /<command> 대상
+    aliases:
+      - balance
+      - money
+      - 돈
+    permission: glaysiashop.money_gs
+    permission-message: 당신은 권한이 없습니다.
+  set_money:
+    description: 누군가의 계좌를 조정할 수 있습니다
+    usage: /<command> 대상 10\$
+    aliases:
+      - setmoney
+    permission: glaysiashop.set_money
+    permission-message: 당신은 권한이 없습니다.
+  transfer:
+    description: 빈손/다이아들고 있을 때 다이아와 돈을 교환합니다.
+    usage: /<command> <다이아 개수>
+    aliases:
+      - 환전
+      - dia
+    permission: glaysiashop.transfer
+    permission-message: 당신은 권한이 없습니다.
+  capital:
+    description: 시장에 풀린 화폐의 총량입니다.
+    usage: /<command>
+    aliases:
+      - 총액
+      - 시가총액
+      - cap
+    permission: glaysiashop.capital
+    permission-message: 당신은 권한이 없습니다.
+  shop:
+    description: 수요 위주로 돌아가는 시장입니다.
+    usage: /<command>
+    aliases:
+      - 시장
+    permission: glaysiashop.shop
+    permission-message: 당신은 권한이 없습니다.
+  nav:
+    description: Test
+    usage: /<command>
+    aliases:
+      - Test
+    permission: glaysiashop.nav
+    permission-message: 당신은 권한이 없습니다.
+
+
+
+
+    
