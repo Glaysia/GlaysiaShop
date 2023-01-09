@@ -1,4 +1,4 @@
-package org.example;
+package glaysia.glaysiashop;
 
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -6,13 +6,14 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.*;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-public class Trade extends JavaPlugin{
+import static glaysia.glaysiashop.GlaysiaShop.log;
+
+public class Trade {
     private static int order_id=0;          //거래번호
     public class Order{                         //주문정보를 담고있는 클래스
         Order(int order_id, Date date, double price, int amount, String trader, Material material){
@@ -24,17 +25,16 @@ public class Trade extends JavaPlugin{
             this.material=material;
             this.is_selling=(price>=0);
         }
-        private final int order_id;            //거래번호 불변
-        private final Date date;                 //거래시간 불변
-        private final double price;               //가격 음수면 구매요청, 양수면 판매요청
-        private final int amount;                   //개수
-        private final String trader;             //주문자 이름
-        private final Material material;         //아이템
-        private final boolean is_selling;             //true면 판매요청, false면 구매요청
-
-        private boolean is_canceled;            //취소됐는지 여부
-        private boolean is_completed;           //거래완료됐는지 여부
-        private boolean is_there_error;         //각 단계에서, 플레이어에게 아이템, 금액 등이 제대로 정산됐는지 여부
+         public final int order_id;            //거래번호 불변
+         public final Date date;                 //거래시간 불변
+         public final double price;               //가격 음수면 구매요청, 양수면 판매요청
+         public final int amount;                   //개수
+         public final String trader;             //주문자 이름
+         public final Material material;         //아이템
+         public final boolean is_selling;             //true면 판매요청, false면 구매요청
+         public boolean is_canceled;            //취소됐는지 여부
+         public boolean is_completed;           //거래완료됐는지 여부
+         public boolean is_there_error;         //각 단계에서, 플레이어에게 아이템, 금액 등이 제대로 정산됐는지 여부
 
         //get, set 메소드 구현해야함
 
@@ -42,59 +42,60 @@ public class Trade extends JavaPlugin{
     private boolean is_saved;
 
 
-    Trade(double price, int amount, String trader, Material material, boolean was_there_error){
-        File dataFile = new File(getDataFolder(), "market.yml");
+    public Trade(double price, int amount, String trader, Material material, boolean was_there_error){
+        String fileName="./plugins/glaysiashop/market.yml";
+        File dataFile = new File(fileName);
         FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
-        Map<String, Object> mainDataMap;
-        //dataFile 체크
-        if (!dataFile.exists()){
-            saveResource("market.yml", false);
-        }
-        Yaml yaml = new Yaml();
-        Map<String, Object> success = new HashMap<>();
-        Map<String, Object> failure = new HashMap<>();
-        try {
-            Map<String, Object> dataMap = yaml.load(new FileInputStream(dataFile));
-            if (!dataMap.containsKey("success")) dataMap.put("success", success);
-            if (!dataMap.containsKey("failure")) dataMap.put("failure", failure);
-            mainDataMap = dataMap;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
 
-        org.example.Trade.order_id++; //거래할 때마다 증가. static변수를 사용.
-
-        Map<String, Object> sheet = new HashMap<>();
-
+        DataIO dataIO = new DataIO();
+        order_id = dataIO.getLastOrder()+1;
         Order order = new Order(
-                org.example.Trade.order_id,
-                (new Date()),
+                order_id,
+                new Date(),
                 price,
                 amount,
                 trader,
                 material
         );
 
-        sheet.put(String.valueOf(org.example.Trade.order_id), order);
+        is_saved = dataIO.writeOrderToDB(order);
 
-        order.is_canceled=false;
-        order.is_completed=false;
-        order.is_there_error=was_there_error;  //거래 시작했을 때 아이템, 금액이 정산됐는지 여부
+//        log.info(mainDataMap.toString());
 
-        if (order.is_there_error){
-            failure.put(String.valueOf(order_id), sheet);
-        }
-        else{
-            success.put(String.valueOf(order_id), sheet);
-        }
-        is_saved=saveToDB(mainDataMap, dataFile);
-
-
+//        order_id++; //거래할 때마다 증가. static변수를 사용.
+//
+//        Map<String, Object> sheet = new LinkedHashMap<>();
+//
+//        Order order = new Order(
+//                order_id,
+//                (new Date()),
+//                price,
+//                amount,
+//                trader,
+//                material
+//        );
+//
+//        sheet.put(String.valueOf(order_id), order);
+//
+//        order.is_canceled=false;
+//        order.is_completed=false;
+//        order.is_there_error=was_there_error;  //거래 시작했을 때 아이템, 금액이 정산됐는지 여부
+//
+//        if (order.is_there_error){
+//            failure.put(String.valueOf(order_id), sheet);
+//        }
+//        else{
+//            success.put(String.valueOf(order_id), sheet);
+//        }
+//        is_saved=saveToDB(mainDataMap, dataFile);
     }
 
+
     private boolean saveToDB(Map<String, Object> mainDataMap, File dataFile){
-        Yaml yaml = new Yaml();
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(dataFile))) {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml yaml = new Yaml(options);
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(dataFile), "UTF-8")) {
             yaml.dump(mainDataMap, writer);
         } catch (FileNotFoundException e) {
             return false;
@@ -122,7 +123,7 @@ public class Trade extends JavaPlugin{
         exampleOrder.is_completed=false;
         exampleOrder.is_there_error=false;//예시
 
-        File dataFile = new File(getDataFolder(), "market.yml");
+        File dataFile = new File( "./plugins/market.yml");
         FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
         Map<String, Object> mainDataMap;
 

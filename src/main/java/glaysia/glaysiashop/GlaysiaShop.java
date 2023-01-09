@@ -26,6 +26,7 @@ public class GlaysiaShop extends JavaPlugin {
     @Override
     public void onEnable() {
         log.info("Plugin 켜짐");
+        log.info(getDataFolder().toString());
 
         if (!setupEconomy() ) {
             log.severe(String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));

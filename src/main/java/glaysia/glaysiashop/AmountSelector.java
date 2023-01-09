@@ -6,9 +6,7 @@ import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.component.Label;
-import it.unimi.dsi.fastutil.Function;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -16,12 +14,10 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import javax.swing.event.HyperlinkEvent;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerArray;
+
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
+
+import static glaysia.glaysiashop.GlaysiaShop.log;
 
 public class AmountSelector implements CommandExecutor {
     CommandSender sender=null;
@@ -135,6 +131,15 @@ public class AmountSelector implements CommandExecutor {
 
             confirm2_blue.setOnClick(
                     inventoryClickEvent -> {
+                        boolean isPlus=sign.getText().equals("+");
+                        String sellOrBuy=(isPlus)?" 판매":" 구매";
+                        double price = combinePlaceValues(num1000, num100, num10, num1, nump10, true);
+                        int amount = Integer.parseInt(amount10.getText().toString());
+//                        int amount = 64;
+                        double pricePerAmount = price/amount;
+
+                        Trade trade = new Trade(price, amount, sender.getName(), material, false);
+
                         sender.sendMessage("거래요청 확정됐습니다.");
                         confirm2_gray.setVisible(true);
                         confirm2_gray.setPriority(Pane.Priority.HIGH);
@@ -288,6 +293,7 @@ public class AmountSelector implements CommandExecutor {
                 gui.addPane(decrement.button[i]);
             }
 
+
             confirm1.setOnClick(
                     inventoryClickEvent -> {
                         boolean isPlus=sign.getText().equals("+");
@@ -298,12 +304,16 @@ public class AmountSelector implements CommandExecutor {
                         double pricePerAmount = price/amount;
 
                         sender.sendMessage(
-                                "거래요청 확정하시겠습니까?\n거래수량은 "+
+                                "거래요청 확정하시겠습니까?\n거래품목은"
+                                        +material.toString()+
+                                        " 거래수량은 "+
                                         Integer.toString(amount)+
                                         "개, 가격은 "+Double.toString(price) +
                                         "$, (개당 "+ Double.toString(pricePerAmount) +
                                         "$), 거래 유형은"+sellOrBuy+"입니다."
                         );
+//
+
                         confirm2_gray.setVisible(false);
                         confirm2_gray.setPriority(Pane.Priority.LOW);
                         confirm2_blue.setVisible(true);
@@ -311,6 +321,7 @@ public class AmountSelector implements CommandExecutor {
                         gui.update();
                     }
             );
+
 
             incrementItem16.setOnClick(
                     inventoryClickEvent ->{

@@ -48,7 +48,7 @@ public class DataIO {
         File file = new File(fileName);
         if (!file.exists()) {
             YmlCreator.createUserDataYml(fileName);
-            log.info("유저데이터 파일 없어서 새로 만듦. debuging_DataIO");
+            log.info("데이터 파일 없어서 새로 만듦. debuging_DataIO");
         }
     }
     private static class YmlCreator {
@@ -134,6 +134,17 @@ public class DataIO {
 
             return (int)key_is_username.get("amount");
         }
+    }
+
+    public int getLastOrder(){
+
+        Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
+        key_is_glaysiashop=YmlReader.readYml(MARKETFILENAME);
+        Map<String, Object> key_is_DIAMOND_Order = new LinkedHashMap<>();
+        key_is_DIAMOND_Order=(Map<String, Object>)(key_is_glaysiashop.get("glaysiashop"));
+
+        int lastOrder= (Integer) (((Map<String, Object>)(key_is_DIAMOND_Order.get("DIAMOND"))).get("last_order"));
+        return lastOrder;
     }
 
     private static class YmlWriter{
@@ -298,7 +309,58 @@ public class DataIO {
 
             return success;
         }
+        public static boolean writeOrderToYml(Map<String, Object> key_is_id_Onevalue, int order_id, String fileName){
+            Map<String, Object> key_is_glaysiashop=YmlReader.readYml(fileName);
+            Map<String, Object> key_is_DIAMOND_ORDER= new LinkedHashMap<>();
+            key_is_DIAMOND_ORDER=(Map<String, Object>)(key_is_glaysiashop.get("glaysiashop"));
 
+            Map<String, Object> key_is_dummy = new LinkedHashMap<>();
+            key_is_dummy = (Map<String, Object>)(key_is_DIAMOND_ORDER.get("DIAMOND"));
+            key_is_dummy.put("last_order",order_id);
+
+            Map<String, Object> key_is_id= new LinkedHashMap<>();
+            key_is_id=(Map<String, Object>)(key_is_DIAMOND_ORDER.get("Order"));
+            key_is_id.put(Integer.toString(order_id),key_is_id_Onevalue);
+
+            key_is_DIAMOND_ORDER.put("DIAMOND", key_is_dummy);
+            key_is_DIAMOND_ORDER.put("Order", key_is_id);
+
+            key_is_glaysiashop.put("glaysiashop", key_is_DIAMOND_ORDER);
+
+            boolean success ;
+
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(options);
+
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(fileName)), "UTF-8")) {
+                yaml.dump(key_is_glaysiashop, writer);
+                success=true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                success=false;
+            }
+//            String debugInfo="저장된 돈: "+Double.toString(aMoney)+"저장된 다이아: "+Double.toString(aAmount);
+//            log.info(debugInfo);
+
+            return success;
+        }
+
+    }
+
+    public boolean writeOrderToDB(Trade.Order order){
+        Map<String, Object> key_is_id = new LinkedHashMap<>();
+        key_is_id.put("date", order.date);
+        key_is_id.put("price", order.price);
+        key_is_id.put("amount", order.amount);
+        key_is_id.put("trader", order.trader);
+        key_is_id.put("material", order.material.toString());
+        key_is_id.put("is_selling", order.is_selling);
+        key_is_id.put("is_canceled", order.is_canceled);
+        key_is_id.put("is_complete", order.is_completed);
+        key_is_id.put("is_there_error", order.is_there_error);
+
+        return YmlWriter.writeOrderToYml(key_is_id, order.order_id, MARKETFILENAME);
     }
 
     public boolean writePlayerToDB(double money) {
