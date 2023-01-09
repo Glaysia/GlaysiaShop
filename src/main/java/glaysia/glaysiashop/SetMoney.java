@@ -27,7 +27,7 @@ public class SetMoney implements CommandExecutor {
                 sender.sendMessage("§4잘못된 입력");
                 return false;
             }
-            DataIO dataIO = new DataIO();
+            DataIO dataIO = new DataIO((Player) sender);
 
             Player player=(Player) sender; //명령어 사용자 객체를 플레이어 객체로 변환
 //            player.sendMessage(player.getName());
@@ -36,30 +36,16 @@ public class SetMoney implements CommandExecutor {
             double money = Double.parseDouble(args[1]);
 
             player.sendMessage("닉네임:"+args[0]+"원:"+args[1]);
+
             Server server=sender.getServer();
             OfflinePlayer oPlayer=(OfflinePlayer) server.getPlayer(args[0]);
             if(oPlayer==null){
                 oPlayer=server.getOfflinePlayer(args[0]);
             }
 
-            double originalMoney=econ.getBalance(args[0]);
             double lastMoney=Double.parseDouble(args[1]);
-            boolean surplus=lastMoney>=originalMoney;
 
-            if(!econ.hasAccount(oPlayer)){
-                econ.createPlayerAccount(oPlayer);
-                sender.sendMessage("플레이어 계좌 존재가 존재하지 않습니다. \n계좌를 만듭니다...");
-            }else{
-                if(surplus) {
-                    econ.depositPlayer(oPlayer, lastMoney - originalMoney);
-                }
-                else{
-                    econ.withdrawPlayer(oPlayer,originalMoney - lastMoney);
-                }
-            }
-
-            MyPlayer myPlayer=new MyPlayer(oPlayer.getName(),oPlayer.getUniqueId().toString(),lastMoney);
-            dataIO.writeYmlIfNotWritten(myPlayer);
+            boolean success=setMoney(player, econ, lastMoney);
 
             return true;
         }else if(sender instanceof ConsoleCommandSender){
@@ -70,4 +56,55 @@ public class SetMoney implements CommandExecutor {
         return false;
     }
 
+    public static boolean setMoney(Player player, Economy econ, double money){
+
+        double originalMoney=econ.getBalance(player);
+        boolean surplus=money>=originalMoney;
+
+        if(!econ.hasAccount(player)){
+            econ.createPlayerAccount(player);
+            player.sendMessage("플레이어 계좌 존재가 존재하지 않습니다. \n계좌를 만듭니다...");
+
+        }
+        else{
+            if(surplus) {
+                econ.depositPlayer(player, (money - originalMoney));
+            }
+            else{
+                econ.withdrawPlayer(player,(originalMoney - money));
+            }
+        }
+        DataIO dataIO = new DataIO(player);
+
+        return dataIO.writeYmlIfNotWritten(player, econ);
+    }
+
+    public static boolean addMoney(Player player, Economy econ, double dMoney){
+        double originalMoney=econ.getBalance(player);
+
+        if(!econ.hasAccount(player)){
+            econ.createPlayerAccount(player);
+            player.sendMessage("플레이어 계좌 존재가 존재하지 않습니다. \n계좌를 만듭니다...");
+        }
+        else{
+            econ.depositPlayer(player, dMoney);
+        }
+        DataIO dataIO = new DataIO(player);
+
+        return dataIO.writeYmlIfNotWritten(player, econ);
+    }
+    public static boolean subMoney(Player player, Economy econ, double dMoney){
+        double originalMoney=econ.getBalance(player);
+
+        if(!econ.hasAccount(player)){
+            econ.createPlayerAccount(player);
+            player.sendMessage("플레이어 계좌 존재가 존재하지 않습니다. \n계좌를 만듭니다...");
+        }
+        else{
+            econ.withdrawPlayer(player, dMoney);
+        }
+        DataIO dataIO = new DataIO(player);
+
+        return dataIO.writeYmlIfNotWritten(player, econ);
+    }
 }

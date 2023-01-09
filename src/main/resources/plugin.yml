@@ -1,6 +1,6 @@
 ﻿name: Glaysiashop
 version: '${version}'
-main: glaysia.glaysiashop.Glaysiashop
+main: glaysia.glaysiashop.GlaysiaShop
 api-version: 1.19
 permissions:
   gs.money:

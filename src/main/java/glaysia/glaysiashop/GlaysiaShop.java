@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class GlaysiaShop extends JavaPlugin {
 
-    java.util.logging.Logger log =  java.util.logging.Logger.getLogger("Minecraft");
+    public static java.util.logging.Logger log =  java.util.logging.Logger.getLogger("Minecraft");
     private static Economy econ = null;
     private static Permission perms = null;
     private static Chat chat = null;
@@ -39,7 +39,7 @@ public class GlaysiaShop extends JavaPlugin {
         getCommand("gt").setExecutor(new gt());
         getCommand("money_gs").setExecutor(new Money(this.getEconomy()));
         getCommand("set_money").setExecutor(new SetMoney(this.getEconomy()));
-        getCommand("transfer").setExecutor(new Transfer(this.getEconomy()));
+        getCommand("transfer").setExecutor(new Transfer_v2(this.getEconomy()));
         getCommand("capital").setExecutor(new Capital());
         getCommand("shop").setExecutor(new GlaysiaGui());
         getCommand("nav").setExecutor(new AmountSelector());

@@ -37,7 +37,7 @@ public class GlaysiaGui implements CommandExecutor {
         this.args=args;
 
         if (sender instanceof Player) { //명령어를 사용자가 입력했으면
-            itemPalette = new ItemPaletteGUI.Builder("Choose an Item:")
+            itemPalette = new ItemPaletteGUI.Builder("아이템선택§8§lQ§r 창")
                     .show(Material::isFlammable) //decide what items are displayed(e.g. flammable only)
                     .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                     .build();
@@ -77,11 +77,10 @@ public class GlaysiaGui implements CommandExecutor {
 
 //            ((Player)sender).closeInventory();
 
-            ChestGui gui = new ChestGui(4, "Select amount");
-            amountSelector.onCommand(sender, command, label, args, gui, material);
-//            gui.show((Player)sender);
-//git push test
-            itemPalette.show((Player)sender);
+            ChestGui gui = new ChestGui(6, "거래요청§8§lR§r 창");
+
+            amountSelector.onCommand(sender, command, label, args, gui, itemPalette, material);
+
         });
     }
 
