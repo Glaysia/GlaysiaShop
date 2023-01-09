@@ -2,11 +2,14 @@ package glaysia.glaysiashop;
 import java.io.*;
 
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -14,6 +17,7 @@ public class DataIO {
     private String USERDATAFILENAME;
     private String MARKETFILENAME;
     private static String header="glaysiashop";
+    private static String dummy="DIAMOND";
     private Player player = null;
     public static java.util.logging.Logger log = java.util.logging.Logger.getLogger("Minecraft");
 
@@ -64,7 +68,7 @@ public class DataIO {
             templateOfPlayerData.put("money", 0.0);
             templateOfPlayerData.put("amount", 0);
             Map<String, Object> templateOfPlayer = new LinkedHashMap<>();
-            templateOfPlayer.put("DIAMOND",templateOfPlayerData);
+            templateOfPlayer.put(dummy,templateOfPlayerData);
             data.put(header, templateOfPlayer);
 
             try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(fileName)), "UTF-8")) {
@@ -114,9 +118,9 @@ public class DataIO {
             Map<String, Object> ldata = new LinkedHashMap<>();
             ldata=readYml(filename);
             Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
-            key_is_glaysiashop=(Map<String, Object>)ldata.get("glaysiashop");
+            key_is_glaysiashop=(Map<String, Object>)ldata.get(header);
             Map<String, Object> key_is_username= new LinkedHashMap<>();
-            key_is_username=(Map<String, Object>)key_is_glaysiashop.get("DIAMOND");
+            key_is_username=(Map<String, Object>)key_is_glaysiashop.get(dummy);
 
             return (double)key_is_username.get("money");
         }
@@ -125,9 +129,9 @@ public class DataIO {
             Map<String, Object> ldata = new LinkedHashMap<>();
             ldata=readYml(filename);
             Map<String, Object> key_is_glaysiashop= new LinkedHashMap<>();
-            key_is_glaysiashop=(Map<String, Object>)ldata.get("glaysiashop");
+            key_is_glaysiashop=(Map<String, Object>)ldata.get(header);
             Map<String, Object> key_is_username= new LinkedHashMap<>();
-            key_is_username=(Map<String, Object>)key_is_glaysiashop.get("DIAMOND");
+            key_is_username=(Map<String, Object>)key_is_glaysiashop.get(dummy);
             if (key_is_username==null)
 //                writeAdminYmlIfNotWritten();
                 return  1;
@@ -136,27 +140,60 @@ public class DataIO {
         }
     }
 
+
     public int getLastOrder(){
 
         Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
         key_is_glaysiashop=YmlReader.readYml(MARKETFILENAME);
         Map<String, Object> key_is_DIAMOND_Order = new LinkedHashMap<>();
-        key_is_DIAMOND_Order=(Map<String, Object>)(key_is_glaysiashop.get("glaysiashop"));
+        key_is_DIAMOND_Order=(Map<String, Object>)(key_is_glaysiashop.get(header));
 
-        int lastOrder= (Integer) (((Map<String, Object>)(key_is_DIAMOND_Order.get("DIAMOND"))).get("last_order"));
+        int lastOrder= (Integer) (((Map<String, Object>)(key_is_DIAMOND_Order.get(dummy))).get("last_order"));
         return lastOrder;
+    }
+
+    public Trade.Order getOrder(int order_id){
+        Map<String, Object> key_is_glaysiashop= new LinkedHashMap<>();
+        key_is_glaysiashop=YmlReader.readYml(MARKETFILENAME);
+
+        Map<String, Object> key_is_DIAMOND_Order=new LinkedHashMap<>();
+        key_is_DIAMOND_Order=(Map<String, Object>)(key_is_glaysiashop.get(header));
+
+        Map<String, Object> key_is_id=new LinkedHashMap<>();
+        key_is_id = (Map<String, Object>)(key_is_DIAMOND_Order.get("Order"));
+
+        Map<String, Object> key_is_date_price_amount__=new LinkedHashMap<>();
+
+        key_is_date_price_amount__= (Map<String, Object>)(key_is_id.get(Integer.toString(order_id)));
+        Material m=Material.getMaterial((String) key_is_date_price_amount__.get("material"));
+        m=(m==null)?Material.RED_MUSHROOM:m;
+
+        Trade.Order order = new Trade.Order(
+                order_id,
+                (Date) key_is_date_price_amount__.get("date"),
+                (Double) key_is_date_price_amount__.get("price"),
+                (Integer) key_is_date_price_amount__.get("amount"),
+                (String) key_is_date_price_amount__.get("trader"),
+                m
+        );
+//        order.is_selling= (boolean) key_is_date_price_amount__.get("is_selling");
+        order.is_canceled= (Boolean) key_is_date_price_amount__.get("is_canceled");
+        order.is_completed= (Boolean) key_is_date_price_amount__.get("is_complete");
+        order.is_there_error= (Boolean) key_is_date_price_amount__.get("is_there_error");
+
+        return order;
     }
 
     private static class YmlWriter{
         private static Map<String, Object> nameUUIDMoneyToValue(String fileName, String name, String UUID, double money){
-            Map<String, Object> key_is_glaysiashop = (Map<String, Object>)(YmlReader.readYml(fileName).get("glaysiashop"));
+            Map<String, Object> key_is_glaysiashop = (Map<String, Object>)(YmlReader.readYml(fileName).get(header));
             Map<String, Object> key_is_username =new LinkedHashMap<>();
             Map<String, Object> ldata =new LinkedHashMap<>();
 
             key_is_username.put("uuid",UUID);
             key_is_username.put("money",money);
             key_is_glaysiashop.put(name, key_is_username);
-            ldata.put("glaysiashop", key_is_glaysiashop);
+            ldata.put(header, key_is_glaysiashop);
             return ldata;
         }
         public static boolean writeYml(String fileName, Player player, double iMoney) {
@@ -234,16 +271,16 @@ public class DataIO {
 
 //            playerForDebugging.sendMessage(key_is_glaysiashop.toString());
 
-            key_is_username=(Map<String, Object>)key_is_glaysiashop.get("glaysiashop");
+            key_is_username=(Map<String, Object>)key_is_glaysiashop.get(header);
 
             key_is_username.put("uuid","for-admin");
             key_is_username.put("money",adminMoney+dMoney);
             key_is_username.put("diamond",adminDiamond+dDiamond);
 
-            key_is_glaysiashop.put("DIAMOND",key_is_username);
+            key_is_glaysiashop.put(dummy,key_is_username);
 
             Map<String, Object> ldata =new LinkedHashMap<>();
-            ldata.put("glaysiashop",key_is_glaysiashop);
+            ldata.put(header,key_is_glaysiashop);
 
 
 //        YmlReader ymlReader=new YmlReader();
@@ -276,16 +313,16 @@ public class DataIO {
             key_is_glaysiashop=YmlReader.readYml(fileName);
 
             Map<String, Object> key_is_DIAMOND = new LinkedHashMap<>();
-            key_is_DIAMOND=(Map<String, Object>)(key_is_glaysiashop.get("glaysiashop"));
+            key_is_DIAMOND=(Map<String, Object>)(key_is_glaysiashop.get(header));
 
             Map<String, Object> key_is_uidmoneyamount = new LinkedHashMap<>();
-            key_is_uidmoneyamount=(Map<String, Object>)(key_is_DIAMOND.get("DIAMOND"));
+            key_is_uidmoneyamount=(Map<String, Object>)(key_is_DIAMOND.get(dummy));
 
             key_is_uidmoneyamount.put("money",money);//test
             key_is_uidmoneyamount.put("amount",amount);//test
 
-            key_is_DIAMOND.put("DIAMOND",key_is_uidmoneyamount);
-            key_is_glaysiashop.put("glaysiashop",key_is_DIAMOND);
+            key_is_DIAMOND.put(dummy,key_is_uidmoneyamount);
+            key_is_glaysiashop.put(header,key_is_DIAMOND);
 
 //            double aMoney=0.0;
 //            int aAmount=0;
@@ -312,20 +349,20 @@ public class DataIO {
         public static boolean writeOrderToYml(Map<String, Object> key_is_id_Onevalue, int order_id, String fileName){
             Map<String, Object> key_is_glaysiashop=YmlReader.readYml(fileName);
             Map<String, Object> key_is_DIAMOND_ORDER= new LinkedHashMap<>();
-            key_is_DIAMOND_ORDER=(Map<String, Object>)(key_is_glaysiashop.get("glaysiashop"));
+            key_is_DIAMOND_ORDER=(Map<String, Object>)(key_is_glaysiashop.get(header));
 
             Map<String, Object> key_is_dummy = new LinkedHashMap<>();
-            key_is_dummy = (Map<String, Object>)(key_is_DIAMOND_ORDER.get("DIAMOND"));
+            key_is_dummy = (Map<String, Object>)(key_is_DIAMOND_ORDER.get(dummy));
             key_is_dummy.put("last_order",order_id);
 
             Map<String, Object> key_is_id= new LinkedHashMap<>();
             key_is_id=(Map<String, Object>)(key_is_DIAMOND_ORDER.get("Order"));
             key_is_id.put(Integer.toString(order_id),key_is_id_Onevalue);
 
-            key_is_DIAMOND_ORDER.put("DIAMOND", key_is_dummy);
+            key_is_DIAMOND_ORDER.put(dummy, key_is_dummy);
             key_is_DIAMOND_ORDER.put("Order", key_is_id);
 
-            key_is_glaysiashop.put("glaysiashop", key_is_DIAMOND_ORDER);
+            key_is_glaysiashop.put(header, key_is_DIAMOND_ORDER);
 
             boolean success ;
 
@@ -421,7 +458,7 @@ public class DataIO {
         double money = 0.0;
 
         File file = new File(DataIO.USERDATAFILENAME);
-        boolean success = writePlayerToDB("DIAMOND", money);
+        boolean success = writePlayerToDB(dummy, money);
         if(!success)
             log.info("어드민 다이아 파일 저장 실패");
 //            player.sendMessage("파일 저장 실패");
@@ -453,10 +490,10 @@ public class DataIO {
         key_is_username.put("diamond",adminDiamond+dDiamond);
         Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
         key_is_glaysiashop=YmlReader.readYml(fileName);
-        key_is_glaysiashop=(Map<String, Object>)key_is_glaysiashop.get("glaysiashop");
-        key_is_glaysiashop.put("DIAMOND",key_is_username);
+        key_is_glaysiashop=(Map<String, Object>)key_is_glaysiashop.get(header);
+        key_is_glaysiashop.put(dummy,key_is_username);
         Map<String, Object> ldata =new LinkedHashMap<>();
-        ldata.put("glaysiashop",key_is_glaysiashop);
+        ldata.put(header,key_is_glaysiashop);
 
 
 //        YmlReader ymlReader=new YmlReader();
@@ -482,7 +519,7 @@ public class DataIO {
 ////        log.info("getMoneyFromPlayer_test_Start");
 //        Map<String, Object> data = books.readYml(this.userdataFileName);
 ////        log.info("getMoneyFromPlayer_book_read");
-//        Map<String, Object> playersData = (Map<String, Object>) data.get("glaysiashop");
+//        Map<String, Object> playersData = (Map<String, Object>) data.get(header);
 ////        log.info("get_from_key");
 //        Map<String, Object> aPlayer = (Map<String, Object>) playersData.get(player.getName());
 ////        log.info("get_from_name");
@@ -514,10 +551,10 @@ public class DataIO {
 //        YmlReader books = new YmlReader();
 //        Map<String, Object> data = books.readYml(this.userdataFileName);
 //
-////        boolean testMap_key=data.containsKey("glaysiashop");
+////        boolean testMap_key=data.containsKey(header);
 ////            log.info(Boolean.toString(testMap_key));
 //
-//        Map<String, Object> playerData = (Map<String, Object>) data.get("glaysiashop");
+//        Map<String, Object> playerData = (Map<String, Object>) data.get(header);
 //        if (playerData.containsKey(player.getName())) {
 //            if (((Map<String, Object>) (playerData.get(player.getName()))).get("uuid").equals(player.getUUID()))
 //                return true;
@@ -572,7 +609,7 @@ private class YmlCreator {
         templateOfPlayerData.put("money", 100);
         Map<String, Object> templateOfPlayer = new LinkedHashMap<>();
         templateOfPlayer.put("user_test김불",templateOfPlayerData);
-        data.put("glaysiashop", templateOfPlayer);
+        data.put(header, templateOfPlayer);
 
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(fileName)), "UTF-8")) {
             yaml.dump(data, writer);
@@ -598,18 +635,18 @@ private static class YmlReader {
         Map<String, Object> ldata = new LinkedHashMap<>();
         ldata=readYml(filename);
         Map<String, Object> key_is_glaysiashop= new LinkedHashMap<>();
-        key_is_glaysiashop=(Map<String, Object>)ldata.get("glaysiashop");
+        key_is_glaysiashop=(Map<String, Object>)ldata.get(header);
         Map<String, Object> key_is_username= new LinkedHashMap<>();
-        key_is_username=(Map<String, Object>)key_is_glaysiashop.get("DIAMOND");
+        key_is_username=(Map<String, Object>)key_is_glaysiashop.get(dummy);
         return (double)key_is_username.get("money");
     }
     public static int getDiamondFromYml(String filename){
         Map<String, Object> ldata = new LinkedHashMap<>();
         ldata=readYml(filename);
         Map<String, Object> key_is_glaysiashop= new LinkedHashMap<>();
-        key_is_glaysiashop=(Map<String, Object>)ldata.get("glaysiashop");
+        key_is_glaysiashop=(Map<String, Object>)ldata.get(header);
         Map<String, Object> key_is_username= new LinkedHashMap<>();
-        key_is_username=(Map<String, Object>)key_is_glaysiashop.get("DIAMOND");
+        key_is_username=(Map<String, Object>)key_is_glaysiashop.get(dummy);
         return (int)key_is_username.get("diamond");
     }
 }
@@ -628,7 +665,7 @@ private static class YmlReader {
 
             Yaml yaml = new Yaml(options);
 
-            Map<String, Object> key_is_glaysiashop = (Map<String, Object>)(YmlReader.readYml(fileName).get("glaysiashop"));
+            Map<String, Object> key_is_glaysiashop = (Map<String, Object>)(YmlReader.readYml(fileName).get(header));
             //Gdsfia:
             //  uuid : "b2815e3f-e84c-437f-8f53-b510c548bc79",
             //  money: 1234
@@ -648,7 +685,7 @@ private static class YmlReader {
             key_is_glaysiashop.put(player.getName(), key_is_username);
             Map<String, Object> ldata =new LinkedHashMap<>();
 
-            ldata.put("glaysiashop",key_is_glaysiashop);
+            ldata.put(header,key_is_glaysiashop);
 
             try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(fileName)), "UTF-8")) {
                 yaml.dump(ldata, writer);
@@ -670,10 +707,10 @@ private static class YmlReader {
             key_is_username.put("diamond",adminDiamond+dDiamond);
             Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
             key_is_glaysiashop=YmlReader.readYml(fileName);
-            key_is_glaysiashop=(Map<String, Object>)key_is_glaysiashop.get("glaysiashop");
-            key_is_glaysiashop.put("DIAMOND",key_is_username);
+            key_is_glaysiashop=(Map<String, Object>)key_is_glaysiashop.get(header);
+            key_is_glaysiashop.put(dummy,key_is_username);
             Map<String, Object> ldata =new LinkedHashMap<>();
-            ldata.put("glaysiashop",key_is_glaysiashop);
+            ldata.put(header,key_is_glaysiashop);
 
 
 //        YmlReader ymlReader=new YmlReader();

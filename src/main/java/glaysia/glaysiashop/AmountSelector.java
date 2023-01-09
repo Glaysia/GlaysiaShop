@@ -6,29 +6,48 @@ import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.component.Label;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+
+import org.jetbrains.annotations.NotNull;
 
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import static glaysia.glaysiashop.GlaysiaShop.log;
+import static java.lang.Math.abs;
 
 public class AmountSelector implements CommandExecutor {
+
     CommandSender sender=null;
     private ChestGui gui = new ChestGui(6, "거래요청 창 §8 R");
     private ItemPaletteGUI itemPaletteGUI=null;
     private OrderBookGui orderBookGui = null;
+    private OrderBookGui myOrderList = null;
+    @NotNull
     private Material material=Material.STONE;
+    @NotNull
+    private Economy econ = null;
+    public AmountSelector(Economy econ){
+        this.econ=econ;
+    }
+
+    //거래요청 창
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args, ChestGui gui, ItemPaletteGUI itemPaletteGUI, Material material){
         this.sender=sender;
         this.itemPaletteGUI=itemPaletteGUI;
         orderBookGui = new OrderBookGui("호가§8§lO§r창", material);
+        myOrderList = new OrderBookGui("내 거래목록 §8§lM§r창 우 거래취소, 좌 정보출력");
+
         if (sender instanceof Player) {
 
             this.gui=gui;
@@ -39,6 +58,9 @@ public class AmountSelector implements CommandExecutor {
             //아이템
             ItemStack item = new ItemStack(material);
             OutlinePane itemPane = new OutlinePane(3, 2, 1, 1);
+
+//            item.setItemMeta()
+
             itemPane.addItem(new GuiItem(item));
                 gui.addPane(itemPane);
 
@@ -48,8 +70,8 @@ public class AmountSelector implements CommandExecutor {
             });
 
 
-
             //라벨
+
             Label nump10        = new Label(6, 0, 1, 1, Font.BIRCH_PLANKS);
                 nump10.setText("0");
                 gui.addPane(nump10);
@@ -78,13 +100,13 @@ public class AmountSelector implements CommandExecutor {
                 gui.addPane(sell);
 
 
-
             Label backToPallete = new Label(2,5,1,1,Font.RED);
                 backToPallete.setText("Q");
                 gui.addPane(backToPallete);
             Label goToOrderBook = new Label(3,5,1,1,Font.STONE);
                 goToOrderBook.setText("O");
                 gui.addPane(goToOrderBook);
+            MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", gui);
 
 
             Label confirm1      = new Label(4,5,1,1,Font.LIGHT_BLUE);
@@ -94,6 +116,7 @@ public class AmountSelector implements CommandExecutor {
                 confirm2_blue.setText("C");
                 confirm2_blue.setVisible(false);
                 gui.addPane(confirm2_blue);
+
             Label confirm2_gray = new Label(5,5,1,1,Font.LIGHT_GRAY);
                 confirm2_gray.setText("C");
                 gui.addPane(confirm2_gray);
@@ -102,98 +125,12 @@ public class AmountSelector implements CommandExecutor {
             Label amount10      = new Label(4,2, 2,1, Font.BIRCH_PLANKS);
                 amount10.setText("64");
                 gui.addPane(amount10);
+
             MyLabel incrementItem16   = new MyLabel(4,3,1,1,Font.RED,"+", gui);
             MyLabel incrementItem1    = new MyLabel(5,3,1,1,Font.PINK,"+", gui);
             MyLabel decrementItem16   = new MyLabel(4,4,1,1,Font.BLUE,"-", gui);
             MyLabel decrementItem1    = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,"-", gui);
 
-
-
-            //클릭 이벤트
-            backToPallete.setOnClick(
-                    inventoryClickEvent -> {
-                    ((Player)sender).closeInventory();
-                    sender.sendMessage("아이템선택§8§lQ§r 창으로 돌아갑니다.");
-                    itemPaletteGUI.show((HumanEntity) sender);
-                }
-            );
-
-            goToOrderBook.setOnClick(
-                    inventoryClickEvent -> {
-                        ((Player)sender).closeInventory();
-                        sender.sendMessage("호가§8§lO§r창으로 이동합니다.");
-                        setGuiToOrderBook();
-                        orderBookGui.show((HumanEntity) sender);
-                    }
-            );
-
-
-
-            confirm2_blue.setOnClick(
-                    inventoryClickEvent -> {
-                        boolean isPlus=sign.getText().equals("+");
-                        String sellOrBuy=(isPlus)?" 판매":" 구매";
-                        double price = combinePlaceValues(num1000, num100, num10, num1, nump10, true);
-                        int amount = Integer.parseInt(amount10.getText().toString());
-//                        int amount = 64;
-                        double pricePerAmount = price/amount;
-
-                        Trade trade = new Trade(price, amount, sender.getName(), material, false);
-
-                        sender.sendMessage("거래요청 확정됐습니다.");
-                        confirm2_gray.setVisible(true);
-                        confirm2_gray.setPriority(Pane.Priority.HIGH);
-                        confirm2_blue.setVisible(false);
-                        confirm2_blue.setPriority(Pane.Priority.LOW);
-
-                        gui.update();
-                    }
-            );
-
-
-//            if (item.getMaxStackSize() == 1) {
-//                increment.setVisible(false);
-//            }
-
-//            decrement.setOnClick(event -> {
-////                item.setAmount(item.getAmount() - 1);
-//
-//                int num_arr[]=new int[5];
-//
-//                num_arr[0]=Integer.parseInt(num1000.getText());
-//                num_arr[1]=Integer.parseInt(num100.getText());
-//                num_arr[2]=Integer.parseInt(num10.getText());
-//                num_arr[3]=Integer.parseInt(num1.getText());
-//                num_arr[4]=Integer.parseInt(nump10.getText());
-//                double num = combinePlaceValues(num_arr[0],num_arr[1],num_arr[2],num_arr[3], num_arr[4]);
-//
-//                num--;
-//                num_arr=doubleTo5DigitArray(num);
-//
-//                num1000.setText(Integer.toString(num_arr[0]));
-//                num100.setText(Integer.toString(num_arr[1]));
-//                num10.setText(Integer.toString(num_arr[2]));
-//                num1.setText(Integer.toString(num_arr[3]));
-//                nump10.setText(Integer.toString(num_arr[4]));
-//
-//
-//                num1000.setVisible(true);
-//                num100.setVisible(true);
-//                num10.setVisible(true);
-//                num1.setVisible(true);
-//                nump10.setVisible(true);
-//
-////                if (item.getAmount() == 1) {
-////                    decrement.setVisible(false);
-////                }
-//
-//                incrementP1.setVisible(true);
-//
-//                gui.update();
-//            });
-
-
-            //1의 자리 증가
             //자리수별 증가버튼
             PlusMinusButton increment=new PlusMinusButton(true);
             PlusMinusButton decrement=new PlusMinusButton(false);
@@ -202,7 +139,7 @@ public class AmountSelector implements CommandExecutor {
                 int finalI = i;
                 increment.button[i].setOnClick(event -> {
 
-                    int num_arr[]=new int[5];
+                    int[] num_arr =new int[5];
 
                     num_arr[0]=Integer.parseInt(num1000.getText());
                     num_arr[1]=Integer.parseInt(num100.getText());
@@ -247,7 +184,7 @@ public class AmountSelector implements CommandExecutor {
                 });
                 decrement.button[i].setOnClick(event -> {
 
-                    int num_arr[]=new int[5];
+                    int[] num_arr =new int[5];
 
                     num_arr[0]=Integer.parseInt(num1000.getText());
                     num_arr[1]=Integer.parseInt(num100.getText());
@@ -294,33 +231,116 @@ public class AmountSelector implements CommandExecutor {
             }
 
 
+            //클릭 이벤트
+            backToPallete.setOnClick(
+                    inventoryClickEvent -> {
+                        ((Player)sender).closeInventory();
+                        sender.sendMessage("아이템선택§8§lQ§r 창으로 돌아갑니다.");
+                        itemPaletteGUI.show((HumanEntity) sender);
+                    }
+            );
+
+            goToOrderBook.setOnClick(
+                    inventoryClickEvent -> {
+                        ((Player)sender).closeInventory();
+                        sender.sendMessage("호가§8§lO§r창으로 이동합니다.");
+                        setGuiToOrderBook();
+                        orderBookGui.show((HumanEntity) sender);
+                    }
+            );
+            goToMyOrderList.setOnClick(
+                    inventoryClickEvent -> {
+                        ((Player)sender).closeInventory();
+                        sender.sendMessage("내 거래목록 §8§lM§r창으로 이동합니다.");
+                        setOrderList();;
+                        myOrderList.show((HumanEntity) sender);
+                    }
+            );
+            //거래요청
             confirm1.setOnClick(
                     inventoryClickEvent -> {
                         boolean isPlus=sign.getText().equals("+");
                         String sellOrBuy=(isPlus)?" 판매":" 구매";
-                        double price = combinePlaceValues(num1000, num100, num10, num1, nump10, true);
-                        int amount = Integer.parseInt(amount10.getText().toString());
+                        double price = combinePlaceValues(num1000, num100, num10, num1, nump10, isPlus);
+                        int amount = Integer.parseInt(amount10.getText());
 //                        int amount = 64;
                         double pricePerAmount = price/amount;
+                        double maxMoney = econ.getBalance((OfflinePlayer) sender);
+                        boolean money_is_not_enough = (maxMoney<price);
 
-                        sender.sendMessage(
-                                "거래요청 확정하시겠습니까?\n거래품목은"
-                                        +material.toString()+
+
+                        String message="거래요청 확정하시겠습니까?\n거래품목은"+
+                                        material.toString()+
                                         " 거래수량은 "+
                                         Integer.toString(amount)+
                                         "개, 가격은 "+Double.toString(price) +
                                         "$, (개당 "+ Double.toString(pricePerAmount) +
-                                        "$), 거래 유형은"+sellOrBuy+"입니다."
-                        );
-//
+                                        "$), 거래 유형은"+sellOrBuy+"입니다.\n";
 
+
+
+                        sender.sendMessage(message);
+//
                         confirm2_gray.setVisible(false);
                         confirm2_gray.setPriority(Pane.Priority.LOW);
+
                         confirm2_blue.setVisible(true);
                         confirm2_blue.setPriority(Pane.Priority.HIGH);
                         gui.update();
                     }
             );
+            //거래확정
+            confirm2_blue.setOnClick(
+                    inventoryClickEvent -> {
+                        boolean isPlus=sign.getText().equals("+");
+                        String sellOrBuy=(isPlus)?" 판매":" 구매";
+                        double price = combinePlaceValues(num1000, num100, num10, num1, nump10, isPlus);
+                        int amount = Integer.parseInt(amount10.getText());
+
+                        boolean money_is_enough_so_well_withdrawed = setPlayersMoneyWhenTrade(sender, price, isPlus);;
+                        boolean item_is_enough_so_well_subtracted = setPlayersInventoryWhenTrade(sender, amount);
+
+
+                        double pricePerAmount = price/amount;
+                        Trade nullTrade = new Trade();
+                        String message = isPlus?"아이템이 부족합니다":"돈이 부족합니다.";
+
+                        if(nullTrade.getAvailOrderNumberPerUser(sender.getName())>44){
+                            sender.sendMessage("현재 거래 개수 제한이 44개입니다.추후에 늘릴게요");
+                        }
+                        else {
+                            if(isPlus){//판매
+                                if(item_is_enough_so_well_subtracted) {
+                                    Trade trade = new Trade(price, amount, sender.getName(), material, false);
+                                    sender.sendMessage("거래요청 확정됐습니다.");
+                                }
+                                else {
+                                    sender.sendMessage(message);
+                                }
+                            }else{  //구매
+                                if(money_is_enough_so_well_withdrawed){
+                                    Trade trade = new Trade(price, amount, sender.getName(), material, false);
+                                    sender.sendMessage("거래요청 확정됐습니다.");
+                                }else{
+                                    sender.sendMessage(message);
+                                }
+                            }
+
+                        }
+
+
+
+                        confirm2_gray.setVisible(true);
+                        confirm2_gray.setPriority(Pane.Priority.HIGH);
+                        confirm2_blue.setVisible(false);
+                        confirm2_blue.setPriority(Pane.Priority.LOW);
+
+                        gui.update();
+
+                    }
+            );
+
+
 
 
             incrementItem16.setOnClick(
@@ -368,47 +388,52 @@ public class AmountSelector implements CommandExecutor {
         return false;
     }
 
+    private boolean setPlayersMoneyWhenTrade(CommandSender sender, double price, boolean isSell) {
+        double maxMoney =  econ.getBalance((OfflinePlayer)sender);
+        boolean money_is_enough = (maxMoney>=abs(price));
+
+        if(money_is_enough){//구매요청일 때, 그리고 돈이 충분할 때
+            econ.withdrawPlayer((OfflinePlayer)sender, abs(price));
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    private boolean setPlayersInventoryWhenTrade(CommandSender sender, int amount) {
+        PlayerInventory inventory =  ((Player)sender).getInventory();
+        ItemStack[] itemStacks = inventory.getStorageContents();
+        List<ItemStack> temp=Arrays.asList(itemStacks);
+        List<ItemStack> itemStackList =new ArrayList<>(temp);
+
+        if(inventory.contains(material, amount)) {
+            int maxAmount = 0;
+//                        maxAmount=maxAmount+i.getAmount();
+            for (ItemStack i : itemStacks) {
+                if (i!=null&&i.getType().equals(material)) {
+                    maxAmount += i.getAmount();
+                    itemStackList.remove(i);
+                }
+            }
+            sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
+            ItemStack add = new ItemStack(material);
+            add.setAmount(maxAmount - amount);
+            itemStackList.add(add);
+            itemStacks =  itemStackList.toArray(new ItemStack[0]);
+            inventory.setStorageContents(itemStacks);
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
         return onCommand(sender, command, label, args, gui, (ItemPaletteGUI) gui,  material);
     }
 
-    private double combinePlaceValues(int thousands, int hundreds, int tens, int ones, int t, boolean isPlus) {
-        double result=thousands*1000 + hundreds*100 + tens*10 + ones + t*0.1;
-        return (isPlus)?(result):(-result);
-    }
-    private double combinePlaceValues(
-            Label num1000,
-            Label num100,
-            Label num10,
-            Label num1,
-            Label nump10,
-            boolean isPlus
-    ) {
-        int thousands=Integer.parseInt(num1000.getText());
-        int hundreds=Integer.parseInt(num100.getText());
-        int tens=Integer.parseInt(num10.getText());
-        int ones=Integer.parseInt(num1.getText());
-        int t=Integer.parseInt(nump10.getText());
-        double result=thousands*1000 + hundreds*100 + tens*10 + ones + t*0.1;
-        return (isPlus)?(result):(-result);
-    }
 
-    public static int[] doubleTo5DigitArray(double value) {
-        int[] placeValues = new int[5];
-        placeValues[0] = (int) value / 1000;
-        placeValues[1] = (int) (value - placeValues[0] * 1000) / 100;
-        placeValues[2] = (int) (value - placeValues[0] * 1000 - placeValues[1] * 100) / 10;
-        placeValues[3] = (int) (value - placeValues[0] * 1000 - placeValues[1] * 100 - placeValues[2] * 10);
-        double temp=value;
-        temp=Math.round(temp*10);   //1.2 to 12
-        placeValues[4] = (int) temp%10;
-
-//        placeValues[4] = (int) ((value - (int) value) * 10);
-        return placeValues;
-
-
-    }
+    //호가창
     private void setGuiToOrderBook(){
         ItemStack item = new ItemStack(material);
         OutlinePane itemPane = new OutlinePane(4, 5, 1, 1);
@@ -445,8 +470,99 @@ public class AmountSelector implements CommandExecutor {
         orderBookGui.addPane(itemPane);
 
     }
+    //내 거래요청 리스트
+    private void setOrderList(){
+//        ItemStack item = new ItemStack(material);
+//        OutlinePane itemPane = new OutlinePane(4, 5, 1, 1);
+//        itemPane.addItem(new GuiItem(item));
+//        itemPane.setOnClick(inventoryClickEvent -> {
+//            ((Player)sender).closeInventory();
+//            orderBookGui.show((HumanEntity) sender);
+//        });
+        Trade trade = new Trade(sender.getName());
 
+        List<Trade.Order> myList = trade.getList();
 
+        MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderList);
+        MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderList);
+        List<MyPane> myPanes = new ArrayList<>();
+        int idx=0;
+        int max_idx=myList.toArray().length;
+
+        for(int row=0;row<5;row++){
+            for(int col=0;col<9;col++){
+                if(idx==max_idx)
+                    break;
+                myPanes.add(new MyPane(col,row,1,1,(myList.get(idx).material), myList.get(idx), myOrderList));
+                idx++;
+            }
+            if(idx==max_idx)
+                break;
+        }
+
+        //거래취소
+        for(MyPane pane : myPanes){
+            pane.setOnClick(
+                    inventoryClickEvent -> {
+                        String order_id = Integer.toString(pane.order.order_id);
+                        String price = Double.toString(pane.order.price);
+                        String amount = Integer.toString(pane.order.amount);
+                        String pricePerAmount= Double.toString ((pane.order.amount)/(pane.order.price));
+                        String material = pane.order.material.toString();
+                        String sellOrBuy = pane.order.is_selling?"판매":"구매";
+                        String inf="거래품목은 "+material+
+                                " 거래수량은 "+amount+
+                                "개, 거래가는 "+price+"$, 개당 거래가는"+ pricePerAmount+
+                                "$),\n거래유형은 "+sellOrBuy+"입니다.\n";
+
+                        String c = inventoryClickEvent.getClick().toString();
+                        Trade itrade= new Trade();
+                        String message;
+
+                        if(c.equals("LEFT")){
+                            message="우클릭을 누르면 거래가 취소됩니다.\n"+inf;
+                            sender.sendMessage(message);
+                        }else if(c.equals("RIGHT")){
+                            message="§d§l거래취소됐습니다.§r 좌클릭을 누르면 거래정보만 출력합니다.\n"+""+inf;
+                            sender.sendMessage(message);
+                            itrade.setOrderCanceled(pane.order.order_id);
+                            pane.setVisible(false);
+                            pane.clear();
+                            myOrderList.update();
+                        }else{
+                            message="우클릭은 거래취소, 좌클릭은 정보출력,\n";
+                            sender.sendMessage(message);
+                        }
+
+                    }
+            );
+        }
+//        backToPallete.setText("Q");
+//        goToAmountselector.setText("R");
+
+        backToPallete.setOnClick(
+                inventoryClickEvent -> {
+                    ((Player)this.sender).closeInventory();
+                    sender.sendMessage("아이템선택§8§lQ§r 창으로 돌아갑니다.\n");
+                    itemPaletteGUI.show((HumanEntity) sender);
+                }
+        );
+
+        //거래요청창
+        goToAmountselector.setOnClick(
+                inventoryClickEvent -> {
+                    ((Player)sender).closeInventory();
+                    sender.sendMessage("거래요청§8§lR§r 창 으로 이동합니다.\n");
+                    gui.show((HumanEntity) sender);
+                }
+        );
+
+//        myOrderList.addPane(backToPallete);
+//        myOrderList.addPane(goToAmountselector);
+//        orderBookGui.addPane(itemPane);
+    }
+
+    //호가창, 거래요청창 내가 만든 클래스
     public class OrderBookGui extends ChestGui{
         private Material material=null;
 
@@ -454,15 +570,39 @@ public class AmountSelector implements CommandExecutor {
             super(6, title);
             this.material=material;
         }
+        private OrderBookGui(String title){
+            super(6, title);
+        }
     }
 
-    private class MyLabel extends Label{
+    //라벨 내가 만든 클래스
+    private class MyLabel extends MyLabel_v2{
+        private MyLabel(int x, int y, int length, int height,Font font, String text, ChestGui gui, String showName){
+            super(x,y,length,height,font);
+            super.setText(text, showName);
+            gui.addPane(this);
+        }
         private MyLabel(int x, int y, int length, int height,Font font, String text, ChestGui gui){
             super(x,y,length,height,font);
             super.setText(text);
             gui.addPane(this);
         }
+
+//        @NotNull
+//        private final Plugin plugin;
+//        setItemMeta()
     }
+    private class MyPane extends OutlinePane{
+        public Trade.Order  order=null;
+        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
+            super(x,y,length, height);
+            ItemStack item = new ItemStack(material);
+            this.addItem(new GuiItem(item));
+            this.order=order;
+            gui.addPane(this);
+        }
+    }
+
     public class PlusMinusButton{
         public Label[] button = new Label[5];
         PlusMinusButton(boolean isPlus){
@@ -478,7 +618,43 @@ public class AmountSelector implements CommandExecutor {
             button[2].setText("T");
             button[3].setText("H");
             button[4].setText("M");
-
         }
+    }
+    private double combinePlaceValues(int thousands, int hundreds, int tens, int ones, int t, boolean isPlus) {
+        double result=thousands*1000 + hundreds*100 + tens*10 + ones + t*0.1;
+        return (isPlus)?(result):(-result);
+    }
+
+    private double combinePlaceValues(
+            Label num1000,
+            Label num100,
+            Label num10,
+            Label num1,
+            Label nump10,
+            boolean isPlus
+    ) {
+        int thousands=Integer.parseInt(num1000.getText());
+        int hundreds=Integer.parseInt(num100.getText());
+        int tens=Integer.parseInt(num10.getText());
+        int ones=Integer.parseInt(num1.getText());
+        int t=Integer.parseInt(nump10.getText());
+        double result=thousands*1000 + hundreds*100 + tens*10 + ones + t*0.1;
+        return (isPlus)?(result):(-result);
+    }
+
+    public static int[] doubleTo5DigitArray(double value) {
+        int[] placeValues = new int[5];
+        placeValues[0] = (int) value / 1000;
+        placeValues[1] = (int) (value - placeValues[0] * 1000) / 100;
+        placeValues[2] = (int) (value - placeValues[0] * 1000 - placeValues[1] * 100) / 10;
+        placeValues[3] = (int) (value - placeValues[0] * 1000 - placeValues[1] * 100 - placeValues[2] * 10);
+        double temp=value;
+        temp=Math.round(temp*10);   //1.2 to 12
+        placeValues[4] = (int) temp%10;
+
+//        placeValues[4] = (int) ((value - (int) value) * 10);
+        return placeValues;
+
+
     }
 }

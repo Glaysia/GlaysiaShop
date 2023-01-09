@@ -37,13 +37,14 @@ public class GlaysiaShop extends JavaPlugin {
         setupChat();
 //        DataIO B = new DataIO();
 
-        getCommand("gt").setExecutor(new gt());
-        getCommand("money_gs").setExecutor(new Money(this.getEconomy()));
-        getCommand("set_money").setExecutor(new SetMoney(this.getEconomy()));
         getCommand("transfer").setExecutor(new Transfer_v2(this.getEconomy()));
+        getCommand("money_gs").setExecutor(new Money(this.getEconomy()));
         getCommand("capital").setExecutor(new Capital());
-        getCommand("shop").setExecutor(new GlaysiaGui());
-        getCommand("nav").setExecutor(new AmountSelector());
+        getCommand("shop").setExecutor(new GlaysiaGui(this.getEconomy()));
+
+        getCommand("nav").setExecutor(new AmountSelector(this.getEconomy()));
+        getCommand("set_money").setExecutor(new SetMoney(this.getEconomy()));
+//        getCommand("gt").setExecutor(new gt());
 
     }
 

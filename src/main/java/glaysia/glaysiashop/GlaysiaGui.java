@@ -6,6 +6,7 @@ package glaysia.glaysiashop;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
@@ -29,7 +30,12 @@ public class GlaysiaGui implements CommandExecutor {
     private String[] args;
     ItemPaletteGUI itemPalette=null;
     private Material material;
+    private Economy econ;
+    GlaysiaGui(Economy econ){
+        this.econ=econ;
+    }
     @Override
+    /** 명령어 실행시 작동부 */
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
         this.sender=sender;
         this.command=command;
@@ -54,14 +60,15 @@ public class GlaysiaGui implements CommandExecutor {
         return false;
     }
 
+
+    /** 위 함수의 구현을 위해 필요함 */
     private GuiItem getDisplayItem(Object o) {
         return getDisplayItem((Material)o);
     }
 
+    /** 거래요청 창으로 이동 */
     private GuiItem getDisplayItem(Material material)
     {
-
-
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.GOLD + material.name());
@@ -72,7 +79,7 @@ public class GlaysiaGui implements CommandExecutor {
             Player player = (Player) event.getWhoClicked();
 //            player.getInventory().addItem(item);
             player.sendMessage(String.format(ChatColor.BLUE + "당신이 고른 것 %s!", material));
-            AmountSelector amountSelector=new AmountSelector();
+            AmountSelector amountSelector=new AmountSelector(econ);
             player.closeInventory();
 
 //            ((Player)sender).closeInventory();

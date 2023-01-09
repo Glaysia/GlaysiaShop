@@ -15,8 +15,8 @@ import static glaysia.glaysiashop.GlaysiaShop.log;
 
 public class Trade {
     private static int order_id=0;          //거래번호
-    public class Order{                         //주문정보를 담고있는 클래스
-        Order(int order_id, Date date, double price, int amount, String trader, Material material){
+    public static class Order{                         //주문정보를 담고있는 클래스
+        public Order(int order_id, Date date, double price, int amount, String trader, Material material){
             this.order_id=order_id;
             this.date=date;
             this.price=price;
@@ -25,17 +25,19 @@ public class Trade {
             this.material=material;
             this.is_selling=(price>=0);
         }
-         public final int order_id;            //거래번호 불변
-         public final Date date;                 //거래시간 불변
-         public final double price;               //가격 음수면 구매요청, 양수면 판매요청
-         public final int amount;                   //개수
-         public final String trader;             //주문자 이름
-         public final Material material;         //아이템
-         public final boolean is_selling;             //true면 판매요청, false면 구매요청
-         public boolean is_canceled;            //취소됐는지 여부
-         public boolean is_completed;           //거래완료됐는지 여부
-         public boolean is_there_error;         //각 단계에서, 플레이어에게 아이템, 금액 등이 제대로 정산됐는지 여부
-
+        public final int order_id;            //거래번호 불변
+        public final Date date;                 //거래시간 불변
+        public final double price;               //가격 음수면 구매요청, 양수면 판매요청
+        public final int amount;                   //개수
+        public final String trader;             //주문자 이름
+        public final Material material;         //아이템
+        public final boolean is_selling;             //true면 판매요청, false면 구매요청
+        public boolean is_canceled;            //취소됐는지 여부
+        public boolean is_completed;           //거래완료됐는지 여부
+        public boolean is_there_error;         //각 단계에서, 플레이어에게 아이템, 금액 등이 제대로 정산됐는지 여부
+        public boolean isMadeBy(String trader){
+            return (this.trader).equals(trader);
+        }
         //get, set 메소드 구현해야함
 
     }
@@ -57,9 +59,7 @@ public class Trade {
                 trader,
                 material
         );
-
         is_saved = dataIO.writeOrderToDB(order);
-
 //        log.info(mainDataMap.toString());
 
 //        order_id++; //거래할 때마다 증가. static변수를 사용.
@@ -111,41 +111,85 @@ public class Trade {
     }
     private Order ReadFromDB(int order_id){
 //        return someFunction(order_id);
-        Order exampleOrder = new Order(
-                1,
-                (new Date(1673122855911L)),
-                -300.0,
-                64,
-                "Glaysia",
-                Material.ACACIA_LOG
-        );
-        exampleOrder.is_canceled=false;
-        exampleOrder.is_completed=false;
-        exampleOrder.is_there_error=false;//예시
+//        Order exampleOrder = new Order(
+//                1,
+//                (new Date(1673122855911L)),
+//                -300.0,
+//                64,
+//                "Glaysia",
+//                Material.ACACIA_LOG
+//        );
+//        exampleOrder.is_canceled=false;
+//        exampleOrder.is_completed=false;
+//        exampleOrder.is_there_error=false;//예시
+        DataIO dataIO= new DataIO();
 
-        File dataFile = new File( "./plugins/market.yml");
-        FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
-        Map<String, Object> mainDataMap;
+        Order outOrder = null;
+        outOrder=dataIO.getOrder(order_id);
 
-        Yaml yaml = new Yaml();
-        Map<String, Object> success = new HashMap<>();
-        try {
-            Map<String, Object> dataMap = yaml.load(new FileInputStream(dataFile));
-            mainDataMap = dataMap;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        success = (Map<String, Object>) mainDataMap.get("success");
-        if (success.containsKey(String.valueOf(order_id))){
-            exampleOrder = (Order) success.get(String.valueOf(order_id));
-            exampleOrder.is_completed = true;
-        }
-        return exampleOrder;
+//        File dataFile = new File( "./plugins/market.yml");
+//        FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
+//        Map<String, Object> mainDataMap;
+//
+//        Yaml yaml = new Yaml();
+//        Map<String, Object> success = new HashMap<>();
+//        try {
+//            Map<String, Object> dataMap = yaml.load(new FileInputStream(dataFile));
+//            mainDataMap = dataMap;
+//        } catch (FileNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+//        success = (Map<String, Object>) mainDataMap.get("success");
+//        if (success.containsKey(String.valueOf(order_id))){
+//            exampleOrder = (Order) success.get(String.valueOf(order_id));
+//            exampleOrder.is_completed = true;
+//        }
+        return outOrder;
     }
 
     Trade(int order_id){
         Order order = null;
         order=ReadFromDB(order_id);       //주문번호를 통해 DB에 접근하여 데이터를 꺼내옴
+    }
+    private List<Order> list=new ArrayList<>();;
+    public Trade(String traderName){
+        DataIO dataIO = new DataIO();
+//        this.list = new ArrayList<>();
+
+        int last_order=dataIO.getLastOrder();
+        for(int i=1;i<=last_order;i++){
+            this.list.add(dataIO.getOrder(i));
+        }
+
+        List<Integer> list_idx_for_remove = new ArrayList<>();
+        int idx=0;
+        this.list.removeIf(i -> (!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error);
+    }
+
+    public int getAvailOrderNumberPerUser(String userName){
+        DataIO dataIO = new DataIO();
+        int last=dataIO.getLastOrder();
+        for(int i=1;i<=last;i++){
+            list.add(dataIO.getOrder(i));
+        }
+        int res=0;
+        for(Order i : list){
+             res=res+((i.isMadeBy(userName) || i.is_canceled || i.is_completed || i.is_there_error)?1:0);
+        }
+        return res;
+    }
+    public Trade(){
+
+    }
+    public void setOrderCanceled(int order_id){
+        Order order = ReadFromDB(order_id);
+        order.is_canceled=true;
+        DataIO dataIO= new DataIO();
+        dataIO.writeOrderToDB(order);
+    }
+
+    public List<Order>getList(){
+        return this.list;
     }
 
 
