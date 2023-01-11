@@ -6,12 +6,11 @@ import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class DataIO {
     private String USERDATAFILENAME;
@@ -21,6 +20,7 @@ public class DataIO {
     private Player player = null;
     public static java.util.logging.Logger log = java.util.logging.Logger.getLogger("Minecraft");
 
+    private List<Trade.Order> orderList=null;
     public DataIO(Player player) {
         this.player = player;
 
@@ -167,12 +167,17 @@ public class DataIO {
         key_is_date_price_amount__= (Map<String, Object>)(key_is_id.get(Integer.toString(order_id)));
         Material m=Material.getMaterial((String) key_is_date_price_amount__.get("material"));
         m=(m==null)?Material.RED_MUSHROOM:m;
-
+//        var tmp =
+//        double ppa = 3.141592;
+//        if (tmp instanceof Integer){
+//            ppa = ((Integer)tmp).doubleValue();
+//        }
         Trade.Order order = new Trade.Order(
                 order_id,
                 (Date) key_is_date_price_amount__.get("date"),
                 (Double) key_is_date_price_amount__.get("price"),
                 (Integer) key_is_date_price_amount__.get("amount"),
+                (Double) key_is_date_price_amount__.get("price_per_amount"),
                 (String) key_is_date_price_amount__.get("trader"),
                 m
         );
@@ -183,6 +188,9 @@ public class DataIO {
 
         return order;
     }
+
+
+
 
     private static class YmlWriter{
         private static Map<String, Object> nameUUIDMoneyToValue(String fileName, String name, String UUID, double money){
@@ -347,13 +355,19 @@ public class DataIO {
             return success;
         }
         public static boolean writeOrderToYml(Map<String, Object> key_is_id_Onevalue, int order_id, String fileName){
+            DataIO tmp = new DataIO();
+            int last=tmp.getLastOrder();
+            if(last<order_id){
+                last=order_id;
+            }
+
             Map<String, Object> key_is_glaysiashop=YmlReader.readYml(fileName);
             Map<String, Object> key_is_DIAMOND_ORDER= new LinkedHashMap<>();
             key_is_DIAMOND_ORDER=(Map<String, Object>)(key_is_glaysiashop.get(header));
 
             Map<String, Object> key_is_dummy = new LinkedHashMap<>();
             key_is_dummy = (Map<String, Object>)(key_is_DIAMOND_ORDER.get(dummy));
-            key_is_dummy.put("last_order",order_id);
+            key_is_dummy.put("last_order",last);
 
             Map<String, Object> key_is_id= new LinkedHashMap<>();
             key_is_id=(Map<String, Object>)(key_is_DIAMOND_ORDER.get("Order"));
@@ -390,6 +404,7 @@ public class DataIO {
         key_is_id.put("date", order.date);
         key_is_id.put("price", order.price);
         key_is_id.put("amount", order.amount);
+        key_is_id.put("price_per_amount", order.pricePerAmount);
         key_is_id.put("trader", order.trader);
         key_is_id.put("material", order.material.toString());
         key_is_id.put("is_selling", order.is_selling);

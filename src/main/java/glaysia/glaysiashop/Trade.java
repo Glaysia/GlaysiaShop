@@ -1,6 +1,7 @@
 package glaysia.glaysiashop;
 
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -21,14 +22,27 @@ public class Trade {
             this.date=date;
             this.price=price;
             this.amount=amount;
+            this.pricePerAmount=price/amount;
             this.trader=trader;
             this.material=material;
             this.is_selling=(price>=0);
         }
+        public Order(int order_id, Date date, double price, int amount, double pricePerAmount, String trader, Material material){
+            this.order_id=order_id;
+            this.date=date;
+            this.price=price;
+            this.amount=amount;
+            this.pricePerAmount=pricePerAmount;
+            this.trader=trader;
+            this.material=material;
+            this.is_selling=(price>=0);
+        }
+
         public final int order_id;            //거래번호 불변
         public final Date date;                 //거래시간 불변
         public final double price;               //가격 음수면 구매요청, 양수면 판매요청
         public final int amount;                   //개수
+        public final double pricePerAmount;
         public final String trader;             //주문자 이름
         public final Material material;         //아이템
         public final boolean is_selling;             //true면 판매요청, false면 구매요청
@@ -38,9 +52,19 @@ public class Trade {
         public boolean isMadeBy(String trader){
             return (this.trader).equals(trader);
         }
+        public boolean isMaterial(Material material){
+            return (this.material).equals(material);
+        }
         //get, set 메소드 구현해야함
-
+        public void printThisOrder(Player player){
+            player.sendMessage(this.toString());
+        }
+        public String toString(){
+            String sellOrBuy = is_selling?"판매":"구매";
+            return "주문자 이름: "+trader+" 거래품목: "+material.toString()+" 가격: "+Double.toString(price)+" 개수: "+Integer.toString(amount) + " 개당 가격: "+Double.toString(pricePerAmount)+" 거래유형은 "+sellOrBuy+"입니다.";
+        }
     }
+
     private boolean is_saved;
 
 
@@ -151,7 +175,7 @@ public class Trade {
         Order order = null;
         order=ReadFromDB(order_id);       //주문번호를 통해 DB에 접근하여 데이터를 꺼내옴
     }
-    private List<Order> list=new ArrayList<>();;
+    private List<Order> list=new LinkedList<>();;
     public Trade(String traderName){
         DataIO dataIO = new DataIO();
 //        this.list = new ArrayList<>();
@@ -163,7 +187,27 @@ public class Trade {
 
         List<Integer> list_idx_for_remove = new ArrayList<>();
         int idx=0;
-        this.list.removeIf(i -> (!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error);
+        this.list.removeIf(i -> (
+                ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
+                ));
+    }
+
+    public Trade(Material material, Player playerForDebug){
+        DataIO dataIO = new DataIO();
+//        this.list = new ArrayList<>();
+
+        int last_order=dataIO.getLastOrder();
+        for(int i=1;i<=last_order;i++){
+            this.list.add(dataIO.getOrder(i));
+        }
+
+
+        List<Integer> list_idx_for_remove = new ArrayList<>();
+        int idx=0;
+        this.list.removeIf(i -> (
+                ((!i.isMaterial(material)) || i.is_canceled || i.is_completed || i.is_there_error)
+        ));
+//        playerForDebug.sendMessage("orderList: "+list.toString());
     }
 
     public int getAvailOrderNumberPerUser(String userName){
@@ -174,7 +218,14 @@ public class Trade {
         }
         int res=0;
         for(Order i : list){
-             res=res+((i.isMadeBy(userName) || i.is_canceled || i.is_completed || i.is_there_error)?1:0);
+            if(i.isMadeBy(userName)) {
+                if(i.is_canceled || i.is_completed || i.is_there_error){
+                    res=res+0;
+                }else{
+                    res=res+1;
+                }
+            }
+
         }
         return res;
     }

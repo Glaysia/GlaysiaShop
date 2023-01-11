@@ -17,14 +17,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
+import static glaysia.glaysiashop.GlaysiaShop.log;
+import static java.lang.Math.*;
 
 public class AmountSelector implements CommandExecutor {
 
@@ -32,7 +33,7 @@ public class AmountSelector implements CommandExecutor {
     private ChestGui gui = new ChestGui(6, "거래요청 창 §8 R");
     private ItemPaletteGUI itemPaletteGUI=null;
     private OrderBookGui orderBookGui = null;
-    private OrderBookGui myOrderList = null;
+    private OrderBookGui myOrderListGui = null;
     @NotNull
     private Material material=Material.STONE;
     @NotNull
@@ -42,11 +43,16 @@ public class AmountSelector implements CommandExecutor {
     }
 
     //거래요청 창
-    public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args, ChestGui gui, ItemPaletteGUI itemPaletteGUI, Material material){
+    public boolean onCommand(
+            CommandSender sender,
+            org.bukkit.command.Command command,
+            String label, String[] args, ChestGui gui,
+            ItemPaletteGUI itemPaletteGUI, Material material
+    ){
         this.sender=sender;
         this.itemPaletteGUI=itemPaletteGUI;
         orderBookGui = new OrderBookGui("호가§8§lO§r창", material);
-        myOrderList = new OrderBookGui("내 거래목록 §8§lM§r창 우 거래취소, 좌 정보출력");
+        myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 우 거래취소, 좌 정보출력");
 
         if (sender instanceof Player) {
 
@@ -253,7 +259,7 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("내 거래목록 §8§lM§r창으로 이동합니다.");
                         setOrderList();;
-                        myOrderList.show((HumanEntity) sender);
+                        myOrderListGui.show((HumanEntity) sender);
                     }
             );
             //거래요청
@@ -297,9 +303,15 @@ public class AmountSelector implements CommandExecutor {
                         double price = combinePlaceValues(num1000, num100, num10, num1, nump10, isPlus);
                         int amount = Integer.parseInt(amount10.getText());
 
-                        boolean money_is_enough_so_well_withdrawed = setPlayersMoneyWhenTrade(sender, price, isPlus);;
-                        boolean item_is_enough_so_well_subtracted = setPlayersInventoryWhenTrade(sender, amount);
-
+                        boolean money_is_enough_so_well_withdrawed;// = setPlayersMoneyWhenTrade(price, isPlus);;
+                        boolean item_is_enough_so_well_subtracted;// = setPlayersInventoryWhenTrade(amount);
+                        if(isPlus){
+                            money_is_enough_so_well_withdrawed=false;
+                            item_is_enough_so_well_subtracted=setPlayersInventoryWhenTrade(amount);
+                        }else{
+                            money_is_enough_so_well_withdrawed=setPlayersMoneyWhenTrade(price, isPlus);
+                            item_is_enough_so_well_subtracted=false;
+                        }
 
                         double pricePerAmount = price/amount;
                         Trade nullTrade = new Trade();
@@ -327,8 +339,6 @@ public class AmountSelector implements CommandExecutor {
                             }
 
                         }
-
-
 
                         confirm2_gray.setVisible(true);
                         confirm2_gray.setPriority(Pane.Priority.HIGH);
@@ -388,7 +398,7 @@ public class AmountSelector implements CommandExecutor {
         return false;
     }
 
-    private boolean setPlayersMoneyWhenTrade(CommandSender sender, double price, boolean isSell) {
+    private boolean setPlayersMoneyWhenTrade(double price, boolean isSell) {
         double maxMoney =  econ.getBalance((OfflinePlayer)sender);
         boolean money_is_enough = (maxMoney>=abs(price));
 
@@ -399,8 +409,39 @@ public class AmountSelector implements CommandExecutor {
             return false;
         }
     }
+    Integer[] divideBy64(int amount){
+        int quotient = (amount/64);
+        Integer[] arr = new Integer[quotient+1];
 
-    private boolean setPlayersInventoryWhenTrade(CommandSender sender, int amount) {
+        int remainder = amount%64;
+        for(int i=0;i<quotient;i++){
+            arr[i]=64;
+        }
+        arr[quotient]=remainder;
+
+//        arr.add(remainder);
+        List<Integer> list = Arrays.asList(arr);
+//        sender.sendMessage("64로 나눈 배열"+list.toString());
+        return arr;
+    }
+    private int numberOfNull(List<ItemStack> itemStackList){
+        int count =0;
+        for(ItemStack i:itemStackList){
+            count+=((i==null)?1:0);
+        }
+        return count;
+    }
+    Integer[] getNullIdx(List<ItemStack> itemStackList){
+        List<Integer> willBeArr = new ArrayList<>();
+        for(int i=0;i<itemStackList.size();i++){
+            if(itemStackList.get(i)==null){
+                willBeArr.add(i);
+            }
+        }
+        return willBeArr.toArray(new Integer[itemStackList.size()]);
+    }
+
+    private boolean setPlayersInventoryWhenTrade(int amount) {
         PlayerInventory inventory =  ((Player)sender).getInventory();
         ItemStack[] itemStacks = inventory.getStorageContents();
         List<ItemStack> temp=Arrays.asList(itemStacks);
@@ -410,25 +451,66 @@ public class AmountSelector implements CommandExecutor {
             int maxAmount = 0;
 //                        maxAmount=maxAmount+i.getAmount();
             for (ItemStack i : itemStacks) {
-                if (i!=null&&i.getType().equals(material)) {
+                if ((i!=null)&&i.getType().equals(material)) {
                     maxAmount += i.getAmount();
                     itemStackList.remove(i);
+                    itemStackList.add(null);
                 }
             }
-            sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
-            ItemStack add = new ItemStack(material);
-            add.setAmount(maxAmount - amount);
-            itemStackList.add(add);
-            itemStacks =  itemStackList.toArray(new ItemStack[0]);
+
+            int afterAmount = maxAmount-amount;
+            Integer [] arrAmount = divideBy64(afterAmount);
+
+            if(arrAmount.length>numberOfNull(itemStackList)){
+                return false;
+            }
+
+            //null인 곳에 set하자. null인 곳의 idx를 받아오는 함수를 만들자.
+            // = new ItemStack(material);
+            Integer[] nullIdx=getNullIdx(itemStackList);
+            for(int i=0;i<arrAmount.length;i++){
+                ItemStack add=new ItemStack(material);
+                add.setAmount(arrAmount[i]);
+                itemStackList.set(nullIdx[i],add);
+            }
+
+            itemStacks = itemStackList.toArray(new ItemStack[itemStackList.size()]);
             inventory.setStorageContents(itemStacks);
+            sender.sendMessage(Arrays.asList(arrAmount).toString());
+            sender.sendMessage(Arrays.asList(nullIdx).toString());
+            sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
+            //debug
             return true;
         }else{
             return false;
         }
     }
 
+    private boolean addItemToInventoryWhenCancelTrade(Trade.Order order){
+        try{
+            if(order.is_selling){
+                PlayerInventory inventory = ((Player)sender).getInventory();
+                ItemStack itemStack = new ItemStack(order.material);
+                itemStack.setAmount(order.amount);
+                inventory.addItem(itemStack);
+            }else{
+                double price=abs(order.price);
+                econ.depositPlayer((OfflinePlayer) sender, price);
+            }
+            return true;
+        }
+        catch (Exception e){
+            sender.sendMessage(e.toString());
+            return false;
+        }
+    }
+
     @Override
-    public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
+    public boolean onCommand(
+            CommandSender sender,
+            org.bukkit.command.Command command,
+            String label, String[] args
+    ) {
         return onCommand(sender, command, label, args, gui, (ItemPaletteGUI) gui,  material);
     }
 
@@ -436,12 +518,15 @@ public class AmountSelector implements CommandExecutor {
     //호가창
     private void setGuiToOrderBook(){
         ItemStack item = new ItemStack(material);
+        //입력받은 아이템 출력 Pane
         OutlinePane itemPane = new OutlinePane(4, 5, 1, 1);
         itemPane.addItem(new GuiItem(item));
         itemPane.setOnClick(inventoryClickEvent -> {
             ((Player)sender).closeInventory();
             orderBookGui.show((HumanEntity) sender);
         });
+
+        AskPrice askPrice = new AskPrice();
 
 
         Label backToPallete = new Label(2,5,1,1,Font.RED);
@@ -480,12 +565,12 @@ public class AmountSelector implements CommandExecutor {
 //            orderBookGui.show((HumanEntity) sender);
 //        });
         Trade trade = new Trade(sender.getName());
-
         List<Trade.Order> myList = trade.getList();
-
-        MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderList);
-        MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderList);
+        sender.sendMessage("mylist: "+myList.toString());
+        MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderListGui);
+        MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderListGui);
         List<MyPane> myPanes = new ArrayList<>();
+//        sender.sendMessage("myPanes: "+);
         int idx=0;
         int max_idx=myList.toArray().length;
 
@@ -493,7 +578,7 @@ public class AmountSelector implements CommandExecutor {
             for(int col=0;col<9;col++){
                 if(idx==max_idx)
                     break;
-                myPanes.add(new MyPane(col,row,1,1,(myList.get(idx).material), myList.get(idx), myOrderList));
+                myPanes.add(new MyPane(col,row,1,1,(myList.get(idx).material), myList.get(idx), myOrderListGui));
                 idx++;
             }
             if(idx==max_idx)
@@ -504,36 +589,34 @@ public class AmountSelector implements CommandExecutor {
         for(MyPane pane : myPanes){
             pane.setOnClick(
                     inventoryClickEvent -> {
-                        String order_id = Integer.toString(pane.order.order_id);
-                        String price = Double.toString(pane.order.price);
-                        String amount = Integer.toString(pane.order.amount);
-                        String pricePerAmount= Double.toString ((pane.order.amount)/(pane.order.price));
-                        String material = pane.order.material.toString();
-                        String sellOrBuy = pane.order.is_selling?"판매":"구매";
-                        String inf="거래품목은 "+material+
-                                " 거래수량은 "+amount+
-                                "개, 거래가는 "+price+"$, 개당 거래가는"+ pricePerAmount+
-                                "$),\n거래유형은 "+sellOrBuy+"입니다.\n";
+//                        String order_id = Integer.toString(pane.order.order_id);
+//                        String price = Double.toString(pane.order.price);
+//                        String amount = Integer.toString(pane.order.amount);
+//                        String pricePerAmount= Double.toString ((pane.order.amount)/(pane.order.price));
+//
+//                        String material = pane.order.material.toString();
+//                        String sellOrBuy = pane.order.is_selling?"판매":"구매";
 
+                        String inf=pane.order.toString();
                         String c = inventoryClickEvent.getClick().toString();
                         Trade itrade= new Trade();
                         String message;
 
                         if(c.equals("LEFT")){
                             message="우클릭을 누르면 거래가 취소됩니다.\n"+inf;
-                            sender.sendMessage(message);
+//                            sender.sendMessage(message);
                         }else if(c.equals("RIGHT")){
                             message="§d§l거래취소됐습니다.§r 좌클릭을 누르면 거래정보만 출력합니다.\n"+""+inf;
-                            sender.sendMessage(message);
+//                            sender.sendMessage(message);
                             itrade.setOrderCanceled(pane.order.order_id);
                             pane.setVisible(false);
                             pane.clear();
-                            myOrderList.update();
+                            myOrderListGui.update();
+                            addItemToInventoryWhenCancelTrade(pane.order);
                         }else{
                             message="우클릭은 거래취소, 좌클릭은 정보출력,\n";
-                            sender.sendMessage(message);
                         }
-
+                            sender.sendMessage(message);
                     }
             );
         }
@@ -587,19 +670,38 @@ public class AmountSelector implements CommandExecutor {
             super.setText(text);
             gui.addPane(this);
         }
-
-//        @NotNull
-//        private final Plugin plugin;
-//        setItemMeta()
     }
     private class MyPane extends OutlinePane{
-        public Trade.Order  order=null;
-        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
+        @NotNull
+        public Trade.Order  order;
+        private ItemStack item;
+        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui, String showname){
             super(x,y,length, height);
-            ItemStack item = new ItemStack(material);
+            item = new ItemStack(material);
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName(showname);
+            item.setItemMeta(itemMeta);
+//            itemMeta.setLocalizedName("test");
             this.addItem(new GuiItem(item));
             this.order=order;
             gui.addPane(this);
+            this.setVisible(true);
+        }
+
+        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
+            this(x,y,length,height,material,order,gui,material.name());
+        }
+
+        private void setOrder(Trade.@NotNull Order order){
+            this.order=order;
+        }
+
+        private void setShowname(String showname){
+//            this.clear();
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName(showname);
+            item.setItemMeta(itemMeta);
+//            this.addItem(new GuiItem(item));
         }
     }
 
@@ -654,7 +756,126 @@ public class AmountSelector implements CommandExecutor {
 
 //        placeValues[4] = (int) ((value - (int) value) * 10);
         return placeValues;
+    }
+    //    호가창에서 아이템 출력
+    private class AskPrice{
+        List<Trade.Order> orderList;
+        List<Trade.Order> orderList_sellOnly;
+        List<Trade.Order> orderList_buyOnly;
+        List<MyPane> orderPanes_sellOnly = new LinkedList<>();
+        List<MyPane> orderPanes_buyOnly = new LinkedList<>();
+        private final Integer[] sellXArray = {3,2,1, 0,0,0,0, 1,2,3, 3,2,1,0};
+        private final Integer[] sellYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
+        private final Integer[] buyXArray = {5,6,7, 8,8,8,7, 6,5,5, 5,6,7,8};
+        private final Integer[] buyYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
+        AskPrice(){
+            Trade trade = new Trade(material, (Player) sender);
+            orderList = trade.getList();
 
+//            material
+//            orderBookGui
+////            int lastOrder_id = dataIO.getLastOrder();
 
+            this.setSellBuyOrder();
+            this.sortByPrice();
+            sender.sendMessage("orderList_sellOnly: "+orderList_sellOnly.toString());
+            sender.sendMessage("orderList_buyOnly: "+orderList_buyOnly.toString());
+            
+            for(int i=0;i<14;i++){
+                orderPanes_sellOnly.add(new MyPane(sellXArray[i], sellYArray[i], 1,1, material, null, orderBookGui, "test"));
+                orderPanes_buyOnly.add(new MyPane(buyXArray[i], buyYArray[i], 1,1, material, null, orderBookGui));
+            }
+            for(int i=0;i<14;i++){
+                if(i<orderList_sellOnly.size()){
+                    orderPanes_sellOnly.get(i).setOrder(orderList_sellOnly.get(i));
+                    orderPanes_sellOnly.get(i).setShowname(orderList_sellOnly.get(i).toString());
+                }else{
+                    orderPanes_sellOnly.get(i).setVisible(false);
+                }
+
+                if(i<orderList_buyOnly.size()){
+                    orderPanes_buyOnly.get(i).setOrder(orderList_buyOnly.get(i));
+                    orderPanes_buyOnly.get(i).setShowname(orderList_buyOnly.get(i).toString());
+                }else{
+                    orderPanes_buyOnly.get(i).setVisible(false);
+                }
+            }
+            for(MyPane i : orderPanes_sellOnly){
+                i.setOnClick(
+                        inventoryClickEvent -> {
+                            String info = i.order.toString();
+                            String click = inventoryClickEvent.getClick().toString();
+                            String message;
+                            if(click.equals("LEFT")){
+                                message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
+                            }else if(click.equals("RIGHT")){
+                                message="거래가 완료됐습니다. 환불은 안됨 "+info;
+                                i.setVisible(false);
+                                i.clear();
+                                orderBookGui.update();
+                            }else{
+                                message="우클릭은 거래승낙, 좌클릭은 정보출력";
+                            }
+                            sender.sendMessage(message);
+                        }
+                );
+            }
+
+        }
+
+        public void filteringByMaterial(){
+            orderList.removeIf(i -> !(i.material.equals(material)));
+        }
+
+        private void setSellBuyOrder(){
+            orderList_sellOnly=new ArrayList<>(orderList);
+            orderList_sellOnly.removeIf(i -> !(i.is_selling));
+            orderList_buyOnly=new ArrayList<>(orderList);
+            orderList_buyOnly.removeIf(i -> (i.is_selling));
+        }
+
+        private void sortByPrice(){
+            sortOrdersByPrice();
+        }
+
+        public void sortOrdersByPrice() {
+
+            if(orderList_sellOnly.size()!=0)
+                QuickSort.quickSort(orderList_sellOnly, 0, orderList_sellOnly.size() - 1);
+
+            if(orderList_buyOnly.size()!=0)
+                QuickSort.quickSort(orderList_buyOnly, 0, orderList_buyOnly.size() - 1);
+        }
+        private class QuickSort {
+            public static void quickSort(List<Trade.Order> orders, int left, int right) {
+                int i = left, j = right;
+                double pivot = orders.get((left + right) / 2).pricePerAmount;
+                while (i <= j) {
+                    while (orders.get(i).pricePerAmount < pivot) {
+                        i++;
+                    }
+                    while (orders.get(j).pricePerAmount > pivot) {
+                        j--;
+                    }
+                    if (i <= j) {
+                        swap(orders, i, j);
+                        i++;
+                        j--;
+                    }
+                }
+                if (left < j) {
+                    quickSort(orders, left, j);
+                }
+                if (i < right) {
+                    quickSort(orders, i, right);
+                }
+            }
+
+            private static void swap(List<Trade.Order> orders, int i, int j) {
+                Trade.Order temp = orders.get(i);
+                orders.set(i, orders.get(j));
+                orders.set(j, temp);
+            }
+        }
     }
 }

@@ -46,6 +46,7 @@ public class GlaysiaShop extends JavaPlugin {
         getCommand("set_money").setExecutor(new SetMoney(this.getEconomy()));
 //        getCommand("gt").setExecutor(new gt());
 
+
     }
 
     private boolean setupEconomy() {

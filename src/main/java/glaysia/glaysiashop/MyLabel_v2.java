@@ -276,7 +276,6 @@ public class MyLabel_v2 extends OutlinePane {
 
 
     public void setText(@NotNull String text, String itemMeta) {
-
         setText(itemMeta, text, (character, item) -> new GuiItem(item, this.plugin));
     }
 
@@ -405,4 +404,6 @@ public class MyLabel_v2 extends OutlinePane {
     public static MyLabel_v2 load(@NotNull Object instance, @NotNull Element element) {
         return load(instance, element, JavaPlugin.getProvidingPlugin(MyLabel_v2.class));
     }
+
+
 }
