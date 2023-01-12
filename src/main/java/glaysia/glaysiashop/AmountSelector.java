@@ -51,7 +51,7 @@ public class AmountSelector implements CommandExecutor {
     ){
         this.sender=sender;
         this.itemPaletteGUI=itemPaletteGUI;
-        orderBookGui = new OrderBookGui("호가§8§lO§r창", material);
+        orderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래", material);
         myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 우 거래취소, 좌 정보출력");
 
         if (sender instanceof Player) {
@@ -298,6 +298,7 @@ public class AmountSelector implements CommandExecutor {
             //거래확정
             confirm2_blue.setOnClick(
                     inventoryClickEvent -> {
+                        Trade trade_s = new Trade(econ);
                         boolean isPlus=sign.getText().equals("+");
                         String sellOrBuy=(isPlus)?" 판매":" 구매";
                         double price = combinePlaceValues(num1000, num100, num10, num1, nump10, isPlus);
@@ -307,9 +308,9 @@ public class AmountSelector implements CommandExecutor {
                         boolean item_is_enough_so_well_subtracted;// = setPlayersInventoryWhenTrade(amount);
                         if(isPlus){
                             money_is_enough_so_well_withdrawed=false;
-                            item_is_enough_so_well_subtracted=setPlayersInventoryWhenTrade(amount);
+                            item_is_enough_so_well_subtracted=trade_s.subPlayersInventoryWhenTrade((Player) sender, material, amount);
                         }else{
-                            money_is_enough_so_well_withdrawed=setPlayersMoneyWhenTrade(price, isPlus);
+                            money_is_enough_so_well_withdrawed=trade_s.setPlayersMoneyWhenTrade(sender,  price, isPlus);
                             item_is_enough_so_well_subtracted=false;
                         }
 
@@ -398,93 +399,7 @@ public class AmountSelector implements CommandExecutor {
         return false;
     }
 
-    private boolean setPlayersMoneyWhenTrade(double price, boolean isSell) {
-        double maxMoney =  econ.getBalance((OfflinePlayer)sender);
-        boolean money_is_enough = (maxMoney>=abs(price));
 
-        if(money_is_enough){//구매요청일 때, 그리고 돈이 충분할 때
-            econ.withdrawPlayer((OfflinePlayer)sender, abs(price));
-            return true;
-        }else{
-            return false;
-        }
-    }
-    Integer[] divideBy64(int amount){
-        int quotient = (amount/64);
-        Integer[] arr = new Integer[quotient+1];
-
-        int remainder = amount%64;
-        for(int i=0;i<quotient;i++){
-            arr[i]=64;
-        }
-        arr[quotient]=remainder;
-
-//        arr.add(remainder);
-        List<Integer> list = Arrays.asList(arr);
-//        sender.sendMessage("64로 나눈 배열"+list.toString());
-        return arr;
-    }
-    private int numberOfNull(List<ItemStack> itemStackList){
-        int count =0;
-        for(ItemStack i:itemStackList){
-            count+=((i==null)?1:0);
-        }
-        return count;
-    }
-    Integer[] getNullIdx(List<ItemStack> itemStackList){
-        List<Integer> willBeArr = new ArrayList<>();
-        for(int i=0;i<itemStackList.size();i++){
-            if(itemStackList.get(i)==null){
-                willBeArr.add(i);
-            }
-        }
-        return willBeArr.toArray(new Integer[itemStackList.size()]);
-    }
-
-    private boolean setPlayersInventoryWhenTrade(int amount) {
-        PlayerInventory inventory =  ((Player)sender).getInventory();
-        ItemStack[] itemStacks = inventory.getStorageContents();
-        List<ItemStack> temp=Arrays.asList(itemStacks);
-        List<ItemStack> itemStackList =new ArrayList<>(temp);
-
-        if(inventory.contains(material, amount)) {
-            int maxAmount = 0;
-//                        maxAmount=maxAmount+i.getAmount();
-            for (ItemStack i : itemStacks) {
-                if ((i!=null)&&i.getType().equals(material)) {
-                    maxAmount += i.getAmount();
-                    itemStackList.remove(i);
-                    itemStackList.add(null);
-                }
-            }
-
-            int afterAmount = maxAmount-amount;
-            Integer [] arrAmount = divideBy64(afterAmount);
-
-            if(arrAmount.length>numberOfNull(itemStackList)){
-                return false;
-            }
-
-            //null인 곳에 set하자. null인 곳의 idx를 받아오는 함수를 만들자.
-            // = new ItemStack(material);
-            Integer[] nullIdx=getNullIdx(itemStackList);
-            for(int i=0;i<arrAmount.length;i++){
-                ItemStack add=new ItemStack(material);
-                add.setAmount(arrAmount[i]);
-                itemStackList.set(nullIdx[i],add);
-            }
-
-            itemStacks = itemStackList.toArray(new ItemStack[itemStackList.size()]);
-            inventory.setStorageContents(itemStacks);
-            sender.sendMessage(Arrays.asList(arrAmount).toString());
-            sender.sendMessage(Arrays.asList(nullIdx).toString());
-            sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
-            //debug
-            return true;
-        }else{
-            return false;
-        }
-    }
 
     private boolean addItemToInventoryWhenCancelTrade(Trade.Order order){
         try{
@@ -564,6 +479,7 @@ public class AmountSelector implements CommandExecutor {
 //            ((Player)sender).closeInventory();
 //            orderBookGui.show((HumanEntity) sender);
 //        });
+
         Trade trade = new Trade(sender.getName());
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage("mylist: "+myList.toString());
@@ -589,14 +505,6 @@ public class AmountSelector implements CommandExecutor {
         for(MyPane pane : myPanes){
             pane.setOnClick(
                     inventoryClickEvent -> {
-//                        String order_id = Integer.toString(pane.order.order_id);
-//                        String price = Double.toString(pane.order.price);
-//                        String amount = Integer.toString(pane.order.amount);
-//                        String pricePerAmount= Double.toString ((pane.order.amount)/(pane.order.price));
-//
-//                        String material = pane.order.material.toString();
-//                        String sellOrBuy = pane.order.is_selling?"판매":"구매";
-
                         String inf=pane.order.toString();
                         String c = inventoryClickEvent.getClick().toString();
                         Trade itrade= new Trade();
@@ -616,7 +524,8 @@ public class AmountSelector implements CommandExecutor {
                         }else{
                             message="우클릭은 거래취소, 좌클릭은 정보출력,\n";
                         }
-                            sender.sendMessage(message);
+
+                        sender.sendMessage(message);
                     }
             );
         }
@@ -646,14 +555,14 @@ public class AmountSelector implements CommandExecutor {
     }
 
     //호가창, 거래요청창 내가 만든 클래스
-    public class OrderBookGui extends ChestGui{
+    public static class OrderBookGui extends ChestGui{
         private Material material=null;
 
-        private OrderBookGui(String title, Material material){
+        OrderBookGui(String title, Material material){
             super(6, title);
             this.material=material;
         }
-        private OrderBookGui(String title){
+        OrderBookGui(String title){
             super(6, title);
         }
     }
@@ -671,7 +580,7 @@ public class AmountSelector implements CommandExecutor {
             gui.addPane(this);
         }
     }
-    private class MyPane extends OutlinePane{
+    public static class MyPane extends OutlinePane{
         @NotNull
         public Trade.Order  order;
         private ItemStack item;
@@ -688,8 +597,14 @@ public class AmountSelector implements CommandExecutor {
             this.setVisible(true);
         }
 
-        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
+        public MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
             this(x,y,length,height,material,order,gui,material.name());
+        }
+        public MyPane(int x, int y, int length, int height, Material material,  ChestGui gui){
+            this(x,y,length,height,material,null,gui,material.name());
+        }
+        public void setAmount(int amount){
+            this.item.setAmount(amount);
         }
 
         private void setOrder(Trade.@NotNull Order order){
@@ -785,6 +700,7 @@ public class AmountSelector implements CommandExecutor {
                 orderPanes_sellOnly.add(new MyPane(sellXArray[i], sellYArray[i], 1,1, material, null, orderBookGui, "test"));
                 orderPanes_buyOnly.add(new MyPane(buyXArray[i], buyYArray[i], 1,1, material, null, orderBookGui));
             }
+
             for(int i=0;i<14;i++){
                 if(i<orderList_sellOnly.size()){
                     orderPanes_sellOnly.get(i).setOrder(orderList_sellOnly.get(i));
@@ -800,16 +716,55 @@ public class AmountSelector implements CommandExecutor {
                     orderPanes_buyOnly.get(i).setVisible(false);
                 }
             }
+
+            orderBookGui.update();
             for(MyPane i : orderPanes_sellOnly){
                 i.setOnClick(
                         inventoryClickEvent -> {
                             String info = i.order.toString();
                             String click = inventoryClickEvent.getClick().toString();
                             String message;
+                            Trade i_trade = new Trade(sender, i.order, econ);
+
                             if(click.equals("LEFT")){
                                 message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
                             }else if(click.equals("RIGHT")){
-                                message="거래가 완료됐습니다. 환불은 안됨 "+info;
+
+                                if(i_trade.enoughMoney((Player)sender)) {
+                                    message = "거래가 완료됐습니다. 환불은 안됨 " + info;
+                                }else{
+                                    message = "돈이 모자란데요?";
+                                }
+
+                                i.setVisible(false);
+                                i.clear();
+                                orderBookGui.update();
+                            }else{
+                                message="우클릭은 거래승낙, 좌클릭은 정보출력";
+                            }
+                            sender.sendMessage(message);
+                        }
+                );
+            }
+
+            for(MyPane i : orderPanes_buyOnly){
+                i.setOnClick(
+                        inventoryClickEvent -> {
+                            String info = i.order.toString();
+                            String click = inventoryClickEvent.getClick().toString();
+                            String message;
+                            Trade i_trade = new Trade(sender, i.order, econ);
+
+                            if(click.equals("LEFT")){
+                                message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
+                            }else if(click.equals("RIGHT")){
+
+                                if(i_trade.enoughItem((Player)sender)) {
+                                    message = "거래가 완료됐습니다. 환불은 안됨 " + info;
+                                }else{
+                                    message = "아이템이 모자란데요?";
+                                }
+
                                 i.setVisible(false);
                                 i.clear();
                                 orderBookGui.update();

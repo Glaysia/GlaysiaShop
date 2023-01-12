@@ -58,6 +58,11 @@ commands:
       - Test
     permission: glaysiashop.nav
     permission-message: 당신은 권한이 없습니다.
+  done:
+    description: done
+    usage: /<command>
+    permission: glaysia.done
+    permission-message: 권한
 
 
 

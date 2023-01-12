@@ -1,7 +1,14 @@
 package glaysia.glaysiashop;
 
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -13,6 +20,8 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import static glaysia.glaysiashop.GlaysiaShop.log;
+import static java.lang.Math.abs;
+import static java.lang.Math.sqrt;
 
 public class Trade {
     private static int order_id=0;          //거래번호
@@ -83,35 +92,9 @@ public class Trade {
                 trader,
                 material
         );
-        is_saved = dataIO.writeOrderToDB(order);
-//        log.info(mainDataMap.toString());
 
-//        order_id++; //거래할 때마다 증가. static변수를 사용.
-//
-//        Map<String, Object> sheet = new LinkedHashMap<>();
-//
-//        Order order = new Order(
-//                order_id,
-//                (new Date()),
-//                price,
-//                amount,
-//                trader,
-//                material
-//        );
-//
-//        sheet.put(String.valueOf(order_id), order);
-//
-//        order.is_canceled=false;
-//        order.is_completed=false;
-//        order.is_there_error=was_there_error;  //거래 시작했을 때 아이템, 금액이 정산됐는지 여부
-//
-//        if (order.is_there_error){
-//            failure.put(String.valueOf(order_id), sheet);
-//        }
-//        else{
-//            success.put(String.valueOf(order_id), sheet);
-//        }
-//        is_saved=saveToDB(mainDataMap, dataFile);
+        is_saved = dataIO.writeOrderToDB(order);
+
     }
 
 
@@ -134,40 +117,12 @@ public class Trade {
         return is_saved;
     }
     private Order ReadFromDB(int order_id){
-//        return someFunction(order_id);
-//        Order exampleOrder = new Order(
-//                1,
-//                (new Date(1673122855911L)),
-//                -300.0,
-//                64,
-//                "Glaysia",
-//                Material.ACACIA_LOG
-//        );
-//        exampleOrder.is_canceled=false;
-//        exampleOrder.is_completed=false;
-//        exampleOrder.is_there_error=false;//예시
+
         DataIO dataIO= new DataIO();
 
         Order outOrder = null;
         outOrder=dataIO.getOrder(order_id);
 
-//        File dataFile = new File( "./plugins/market.yml");
-//        FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
-//        Map<String, Object> mainDataMap;
-//
-//        Yaml yaml = new Yaml();
-//        Map<String, Object> success = new HashMap<>();
-//        try {
-//            Map<String, Object> dataMap = yaml.load(new FileInputStream(dataFile));
-//            mainDataMap = dataMap;
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//        success = (Map<String, Object>) mainDataMap.get("success");
-//        if (success.containsKey(String.valueOf(order_id))){
-//            exampleOrder = (Order) success.get(String.valueOf(order_id));
-//            exampleOrder.is_completed = true;
-//        }
         return outOrder;
     }
 
@@ -189,8 +144,27 @@ public class Trade {
         int idx=0;
         this.list.removeIf(i -> (
                 ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
-                ));
+        ));
+
     }
+    public void setOrderListToBeDone(String traderName){
+        DataIO dataIO = new DataIO();
+//        int last_done_order=dataIO.getLastDoneOrder();
+//        for(int i=1;i<=last_done_order;i++){
+//            this.list.add(dataIO.getDoneOrder(i));
+//        }
+//
+        this.list=dataIO.getDoneOrderList();
+
+        this.list.removeIf(i -> (
+                ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
+        ));
+
+        for(Trade.Order i : this.list){
+            doneMessage=doneMessage+" "+i.toString()+"\n";
+        }
+    }
+    String doneMessage="지금까지 완료된 구매주문:\n";
 
     public Trade(Material material, Player playerForDebug){
         DataIO dataIO = new DataIO();
@@ -232,6 +206,281 @@ public class Trade {
     public Trade(){
 
     }
+    public Trade(Economy econ){
+        this.econ=econ;
+    }
+    private OfflinePlayer seller;
+    private OfflinePlayer buyer;
+    private CommandSender sender;
+    private Order order;
+    private Economy econ;
+
+    public Trade(CommandSender player, Order order, Economy econ){
+        sender=player;
+        Player o = player.getServer().getPlayer(order.trader);
+        this.order=order;
+        this.econ=econ;
+
+        if(order.is_selling){
+            buyer=(OfflinePlayer) player;
+            seller= (OfflinePlayer) o;
+        }else{
+            buyer=(OfflinePlayer) o;
+            seller= (OfflinePlayer) player;
+        }
+
+    }
+    public boolean enoughMoney(HumanEntity player){
+        boolean money_is_enough_so_well_withdrawed;
+        boolean money_is_well_paid;
+        // 판매요청에 구매할 때 판매자가 돈을 받고 구매자가 돈을 내야함.
+        boolean item_is_enough_so_well_subtracted;
+        boolean item_is_well_delivered;
+        DataIO dataIO = new DataIO();
+        item_is_enough_so_well_subtracted = true;
+
+        //A는 seller B는 buyer
+        //판매요청 시 A는 아이템을 뺏김
+        //요청수락 시 A는 돈을 받음   B는 돈을 뺏김 아이템을 받음 << 이게 중요
+
+        //B에게 돈이 있는가? 있으면 뺏어라.  OK
+        //B에게 돈이 있고 뺏었는가? 뺏엇으면 아이템을 줘라 OK
+        //그러면 A에게 돈을 줘라     OK
+
+        money_is_enough_so_well_withdrawed = setPlayersMoneyWhenTrade(buyer, order.price, order.is_selling);
+
+        if(money_is_enough_so_well_withdrawed){
+            ItemStack itemStack = new ItemStack(order.material);
+            itemStack.setAmount(order.amount);
+            boolean tmp;
+            try {
+                econ.depositPlayer(seller, abs(order.price));
+                tmp=true;
+            }catch (Exception e){
+                log.info(e.toString());
+                tmp=false;
+            }
+            money_is_well_paid=tmp;
+        }else{
+            money_is_well_paid=false;
+            item_is_well_delivered=false;
+        }
+
+        item_is_well_delivered=moveOrderToDone(dataIO);
+
+        return money_is_well_paid&&money_is_enough_so_well_withdrawed&&item_is_enough_so_well_subtracted&&item_is_well_delivered;
+
+    }
+
+    public boolean enoughItem(HumanEntity player){
+        //A는 buyer B는 seller
+        //구매요청 시 A는 돈을 뻇김
+        //요청수락 시 A는 아이템을 받음, B는 아이템을 뺏김 돈을 받음 << 이게 중요
+
+        //B에게 아이템이 있는가? 있으면 뺏어라 OK
+        //B에게서 아이템이 있고 뺏었는가? 뺏었으면 돈을 줘라 OK
+        //그러면 A에게 아이템을 줘라 <= 오프라인이면 못주니까 일단 데이터베이스에 저장을 먼저 하고 O/ 동시에 알림을 보낸다.
+        //알림 받은 사람이 명령어를 통해 받을 수 있는 구조.
+        //플레이어가 들어오면 그 때 내역 전달, 명령어로 받을 수 있게 하기
+        boolean money_is_enough_so_well_withdrawed;
+        boolean money_is_well_paid;
+        // 판매요청에 구매할 때 판매자가 돈을 받고 구매자가 돈을 내야함.
+        boolean item_is_enough_so_well_subtracted;
+        boolean item_is_well_delivered;
+        DataIO dataIO = new DataIO();
+
+        money_is_enough_so_well_withdrawed = true;
+        item_is_enough_so_well_subtracted = subPlayersInventoryWhenTrade(seller, order.material, order.amount);
+        boolean tmp;
+        if(item_is_enough_so_well_subtracted){
+            econ.depositPlayer(seller, abs(order.price));
+            tmp=true;
+        }else {
+            tmp=false;
+        }
+
+        boolean buyer_is_online = sender.getServer().getOnlinePlayers().contains(buyer);
+        if(buyer_is_online)
+            buyer.getPlayer().sendMessage("거래완료!! 누군가 당신의 구매요청에 응했습니다."+order.toString());
+
+        money_is_well_paid=tmp;
+        item_is_well_delivered=moveOrderToDone(dataIO);
+
+        return money_is_well_paid&&money_is_enough_so_well_withdrawed&&item_is_enough_so_well_subtracted&&item_is_well_delivered;
+    }
+    public boolean moveOrderToDone(DataIO dataIO){
+        order.is_completed=true;
+        dataIO.writeOrderToDB(order);
+        order.is_completed=false;
+        return dataIO.writeDoneOrderToDB(order);
+    }
+
+    /*
+    public boolean enoughMoney_Item(HumanEntity player) {
+        boolean money_is_enough_so_well_withdrawed;
+        boolean money_is_well_paid;
+        // 판매요청에 구매할 때 판매자가 돈을 받고 구매자가 돈을 내야함.
+        boolean item_is_enough_so_well_subtracted;
+        boolean item_is_well_delivered;
+        DataIO dataIO = new DataIO();
+        // 구매요청에 판매할 때 판매자가 돈을 받고 아이템을 내야함, 구매자는 아이템을 받아야함.
+        if(order.is_selling){//A는 seller B는 buyer
+            //판매요청 시 A는 아이템을 뺏김
+            //요청수락 시 A는 돈을 받음   B는 돈을 뺏김 아이템을 받음 << 이게 중요
+
+            //B에게 돈이 있는가? 있으면 뺏어라.  OK
+            //B에게 돈이 있고 뺏었는가? 뺏엇으면 아이템을 줘라 OK
+            //그러면 A에게 돈을 줘라     OK
+            item_is_enough_so_well_subtracted = true;
+
+            money_is_enough_so_well_withdrawed = setPlayersMoneyWhenTrade(buyer, order.price, order.is_selling);
+            if(money_is_enough_so_well_withdrawed){
+                Inventory inventory = buyer.getPlayer().getInventory();
+                ItemStack itemStack = new ItemStack(order.material);
+                itemStack.setAmount(order.amount);
+                boolean tmp;
+                try {
+                    econ.depositPlayer(seller, abs(order.price));
+                    tmp=true;
+                    inventory.addItem(itemStack);
+                    item_is_well_delivered=true;
+                }catch (Exception e){
+                    log.info(e.toString());
+                    tmp=false;
+//                    return false;
+                }
+                money_is_well_paid=tmp;
+            }else{
+                money_is_well_paid=false;
+            }
+
+        }else{
+        }
+
+        //공통
+        order.is_completed=true;
+        dataIO.writeOrderToDB(order);
+        order.is_completed=false;
+        item_is_well_delivered=dataIO.writeDoneOrderToDB(order);
+
+        return (money_is_enough_so_well_withdrawed&&money_is_well_paid&&item_is_enough_so_well_subtracted&&item_is_well_delivered);
+    }
+    */
+
+
+    public boolean setPlayersMoneyWhenTrade(CommandSender sender,  double price, boolean isSell) {
+        return setPlayersMoneyWhenTrade((OfflinePlayer) sender, price, isSell);
+    }
+
+    public boolean setPlayersMoneyWhenTrade(OfflinePlayer sender,  double price, boolean isSell) {
+        double maxMoney =  econ.getBalance(sender);
+        boolean money_is_enough = (maxMoney>=abs(price));
+
+        if(money_is_enough){//구매요청일 때, 그리고 돈이 충분할 때
+            econ.withdrawPlayer((OfflinePlayer)sender, abs(price));
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public boolean subPlayersInventoryWhenTrade(OfflinePlayer sender,Material material, int amount) {
+        return subPlayersInventoryWhenTrade(this.sender.getServer().getPlayer(sender.getName()), material, amount);
+//        return true;
+    }
+
+    public boolean subPlayersInventoryWhenTrade(Player sender,Material material,int amount){
+            PlayerInventory inventory =  (sender).getInventory();
+            ItemStack[] itemStacks = inventory.getStorageContents();
+            List<ItemStack> temp=Arrays.asList(itemStacks);
+            List<ItemStack> itemStackList =new ArrayList<>(temp);
+
+            if(inventory.contains(material, amount)) {
+                int maxAmount = 0;
+//                        maxAmount=maxAmount+i.getAmount();
+                for (ItemStack i : itemStacks) {
+                    if ((i!=null)&&i.getType().equals(material)) {
+                        maxAmount += i.getAmount();
+                        itemStackList.remove(i);
+                        itemStackList.add(null);
+                    }
+                }
+
+                int afterAmount = maxAmount-amount;
+                Integer [] arrAmount = this.divideBy64(afterAmount);
+
+                if(arrAmount.length>this.numberOfNull(itemStackList)){
+                    return false;
+                }
+
+                //null인 곳에 set하자. null인 곳의 idx를 받아오는 함수를 만들자.
+                // = new ItemStack(material);
+                Integer[] nullIdx=this.getNullIdx(itemStackList);
+                for(int i=0;i<arrAmount.length;i++){
+                    ItemStack add=new ItemStack(material);
+                    add.setAmount(arrAmount[i]);
+                    itemStackList.set(nullIdx[i],add);
+                }
+
+                itemStacks = itemStackList.toArray(new ItemStack[itemStackList.size()]);
+                inventory.setStorageContents(itemStacks);
+                sender.sendMessage(Arrays.asList(arrAmount).toString());
+                sender.sendMessage(Arrays.asList(nullIdx).toString());
+                sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
+                //debug
+                return true;
+            }else{
+                return false;
+            }
+    }
+
+//    public boolean addPlayersInventoryWhenTrade(Player sender,Material material,int amount){
+//        PlayerInventory inventory =  (sender).getInventory();
+//        ItemStack[] itemStacks = inventory.getStorageContents();
+//        List<ItemStack> temp=Arrays.asList(itemStacks);
+//        List<ItemStack> itemStackList =new ArrayList<>(temp);
+//        ItemStack item = new ItemStack(material);
+//        item.setAmount(amount);
+//        Integer[] nullIdx = this.getNullIdx(itemStackList);
+//
+//        itemStackList.add(item);
+//        itemStacks = itemStackList.toArray(new ItemStack[itemStackList.size()]);
+//        inventory.setStorageContents(itemStacks);
+//        return true;
+//    }
+
+    public Integer[] divideBy64(int amount){
+        int quotient = (amount/64);
+        Integer[] arr = new Integer[quotient+1];
+
+        int remainder = amount%64;
+        for(int i=0;i<quotient;i++){
+            arr[i]=64;
+        }
+        arr[quotient]=remainder;
+
+//        arr.add(remainder);
+        List<Integer> list = Arrays.asList(arr);
+//        sender.sendMessage("64로 나눈 배열"+list.toString());
+        return arr;
+    }
+    public int numberOfNull(List<ItemStack> itemStackList){
+        int count =0;
+        for(ItemStack i:itemStackList){
+            count+=((i==null)?1:0);
+        }
+        return count;
+    }
+    public Integer[] getNullIdx(List<ItemStack> itemStackList){
+        List<Integer> willBeArr = new ArrayList<>();
+        for(int i=0;i<itemStackList.size();i++){
+            if(itemStackList.get(i)==null){
+                willBeArr.add(i);
+            }
+        }
+        return willBeArr.toArray(new Integer[itemStackList.size()]);
+    }
+
     public void setOrderCanceled(int order_id){
         Order order = ReadFromDB(order_id);
         order.is_canceled=true;
