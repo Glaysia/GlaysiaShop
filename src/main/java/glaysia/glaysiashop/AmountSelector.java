@@ -4,6 +4,7 @@ import com.github.stefvanschie.inventoryframework.font.util.Font;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
+import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.component.Label;
 import com.github.stefvanschie.inventoryframework.pane.component.Slider;
@@ -53,7 +54,9 @@ public class AmountSelector implements CommandExecutor {
         this.sender=sender;
         this.itemPaletteGUI=itemPaletteGUI;
         askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래", material);
+
         myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
+
 
         if (sender instanceof Player) {
 
@@ -69,7 +72,7 @@ public class AmountSelector implements CommandExecutor {
 //            item.setItemMeta()
 
             itemPane.addItem(new GuiItem(item));
-//                gui.addPane(itemPane);
+                gui.addPane(itemPane);
 
 //            Slider slider = new Slider(0, 0, 9, 6);
 //            gui.addPane(slider);
@@ -338,8 +341,8 @@ public class AmountSelector implements CommandExecutor {
                         Trade nullTrade = new Trade();
                         String message = isPlus?"아이템이 부족합니다":"돈이 부족합니다.";
 
-                        if(nullTrade.getAvailOrderNumberPerUser(sender.getName())>44){
-                            sender.sendMessage("현재 거래 개수 제한이 44개입니다.추후에 늘릴게요");
+                        if(nullTrade.getAvailOrderNumberPerUser(sender.getName())>220){
+                            sender.sendMessage("현재 거래 개수 제한이 220개입니다.추후에 늘릴게요");
                         }
 
                         else {
@@ -509,25 +512,72 @@ public class AmountSelector implements CommandExecutor {
         MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderListGui, "거래요청 창으로 가기");
         List<MyPane> myPanes = new ArrayList<>();
 //        sender.sendMessage("myPanes: "+);
-        int idx=0;
+        int idx;
         int max_idx=myList.toArray().length;
         MyPane tmp;
         Trade.Order tmpO;
+        int maxPanes=5;
+        PaginatedPane pPane=new PaginatedPane(0,0,9,6);
 
-        for(int row=0;row<5;row++){
-            for(int col=0;col<9;col++){
-                if(idx==max_idx)
-                    break;
+        MyPane nextPage= new MyPane(8,5,1,1,Material.ACACIA_BUTTON,myOrderListGui,"다음 페이지로");
+        MyPane backPage= new MyPane(0,5,1,1,Material.ACACIA_BUTTON,myOrderListGui,"이전 페이지로");
+        MyPane air = new MyPane(7,5,1,1,Material.ACACIA_BOAT, myOrderListGui,"오류");
+        air.setVisible(false);
+        myOrderListGui.update();
 
-                tmpO=myList.get(idx);
-                tmp=new MyPane(col,row,1,1,(myList.get(idx).material), tmpO, myOrderListGui,tmpO.toString());
-                myPanes.add(tmp);
 
-                idx++;
+        nextPage.setShowname("현재"+Integer.toString(pPane.getPage())+"페이지\n");
+        backPage.setShowname("현재"+Integer.toString(pPane.getPage())+"페이지\n");
+
+        for(int i=0;i<maxPanes;i++) {
+            pPane.addPage(air);
+            pPane.addPane(i,air);
+            myOrderListGui.update();
+        }
+
+        nextPage.setOnClick(
+                inventoryClickEvent -> {
+                    int p=pPane.getPage();
+                    int np=(p>=4)?4:(p+1);
+                    pPane.setPage(np);
+//                    sender.sendMessage(Integer.toString(p));
+                    nextPage.setShowname("현재"+Integer.toString(np)+"페이지\n");
+                    backPage.setShowname("현재"+Integer.toString(np)+"페이지\n");
+
+                    myOrderListGui.update();
+                }
+        );
+
+        backPage.setOnClick(
+                inventoryClickEvent -> {
+                    int p=pPane.getPage();
+                    int np=(p<=0)?0:(p-1);
+                    pPane.setPage(np);
+                    nextPage.setShowname("현재"+Integer.toString(np)+"페이지\n");
+                    backPage.setShowname("현재"+Integer.toString(np)+"페이지\n");
+
+                    myOrderListGui.update();
+                }
+        );
+
+        idx=0;
+        for(int p=0;p<maxPanes;p++){
+            for(int row=0;row<5;row++){
+                for(int col=0;col<9;col++){
+                    if(idx==max_idx)
+                        break;
+                    tmpO=myList.get(idx);
+                    tmp=new MyPane(col,row,1,1,(myList.get(idx).material), tmpO,tmpO.toString());
+                    myPanes.add(tmp);
+                    pPane.addPane(p,tmp);
+                    idx++;
+                }
             }
             if(idx==max_idx)
                 break;
         }
+
+        myOrderListGui.addPane(pPane);
 
         //거래취소
         for(MyPane pane : myPanes){
@@ -554,7 +604,6 @@ public class AmountSelector implements CommandExecutor {
                             message="우클릭은 거래취소, 좌클릭은 정보출력,\n";
                             preventTakeItem(inventoryClickEvent, myOrderListGui);
                         }
-
                         sender.sendMessage(message);
                     }
             );
@@ -617,6 +666,7 @@ public class AmountSelector implements CommandExecutor {
         @NotNull
         public Trade.Order  order;
         private ItemStack item;
+
         private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui, String showname){
             super(x,y,length, height);
             item = new ItemStack(material);
@@ -629,12 +679,30 @@ public class AmountSelector implements CommandExecutor {
             gui.addPane(this);
             this.setVisible(true);
         }
-
+        private MyPane(int x, int y, int length, int height, Material material, Trade.Order order, String showname){
+            super(x,y,length, height);
+            item = new ItemStack(material);
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName(showname);
+            item.setItemMeta(itemMeta);
+//            itemMeta.setLocalizedName("test");
+            this.addItem(new GuiItem(item));
+            this.order=order;
+            this.setVisible(true);
+        }
         public MyPane(int x, int y, int length, int height, Material material, Trade.Order order, ChestGui gui){
             this(x,y,length,height,material,order,gui,material.name());
         }
-        public MyPane(int x, int y, int length, int height, Material material,  ChestGui gui){
-            this(x,y,length,height,material,null,gui,material.name());
+        public MyPane(int x, int y, int length, int height, Material material, ChestGui gui, String showName){
+            super(x,y,length, height);
+            item = new ItemStack(material);
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName(showName);
+            item.setItemMeta(itemMeta);
+//            itemMeta.setLocalizedName("test");
+            this.addItem(new GuiItem(item));
+            gui.addPane(this);
+            this.setVisible(true);
         }
         public void setAmount(int amount){
             this.item.setAmount(amount);
@@ -653,6 +721,7 @@ public class AmountSelector implements CommandExecutor {
 //            this.addItem(new GuiItem(item));
         }
     }
+
 
     public class PlusMinusButton{
         public MyLabel[] button = new MyLabel[5];

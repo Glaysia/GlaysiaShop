@@ -155,7 +155,6 @@ public class ItemPaletteGUI extends ChestGui
 
         public Builder show(Predicate<Material> itemFilter)
         {
-
             this.itemFilter = itemFilter;
             return this;
         }
