@@ -21,7 +21,7 @@ import java.util.Deque;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-
+//주석
 import static java.util.stream.Collectors.toCollection;
 
 public class ItemPaletteGUI extends ChestGui
