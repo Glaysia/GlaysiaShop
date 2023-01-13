@@ -9,17 +9,15 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
-import org.bukkit.Bukkit;
 //import org.bukkit.command.Command;
 //import org.bukkit.command.CommandSender;
 //import org.bukkit.entity.Player;
 //import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
+
 
 public class GlaysiaShop extends JavaPlugin {
 
@@ -27,6 +25,9 @@ public class GlaysiaShop extends JavaPlugin {
     private static Economy econ = null;
     private static Permission perms = null;
     private static Chat chat = null;
+    public static ItemPaletteGUI itemPalette=null;
+    public static Player tradingPlayer;
+
 
     @Override
     public void onDisable() {
@@ -51,6 +52,7 @@ public class GlaysiaShop extends JavaPlugin {
         getCommand("money_gs").setExecutor(new Money(this.getEconomy()));
         getCommand("set_money").setExecutor(new SetMoney(this.getEconomy()));
         getCommand("capital").setExecutor(new Capital());
+
 
         getCommand("shop").setExecutor(new GlaysiaGui(this.getEconomy()));
         getCommand("done").setExecutor(new DoneOrder());
