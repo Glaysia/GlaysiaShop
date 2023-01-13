@@ -17,6 +17,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 
+import java.util.function.Predicate;
+
 import static glaysia.glaysiashop.GlaysiaShop.itemPalette;
 import static glaysia.glaysiashop.GlaysiaShop.tradingPlayer;
 
@@ -69,13 +71,14 @@ public class GlaysiaGui implements CommandExecutor {
 
     void command(){
         tradingPlayer=(Player)sender;
+        MaterialPredicate materialPredicate= new MaterialPredicate();
+
         itemPalette = new ItemPaletteGUI.Builder("아이템선택§8§lQ§r 창")
-                .show(Material::isBlock) //decide what items are displayed(e.g. flammable only)
-                .show(Material::isItem) //decide what items are displayed(e.g. flammable only)
+//                .show(Material::isBlock) //decide what items are displayed(e.g. flammable only)
+                .show((Predicate<Material>)materialPredicate) //decide what items are displayed(e.g. flammable only)
                 .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                 .build();
         itemPalette.show((Player)sender);
-
     }
 
 
@@ -107,6 +110,85 @@ public class GlaysiaGui implements CommandExecutor {
             amountSelector.onCommand(sender, command, label, args, gui, itemPalette, material);
 
         });
+    }
+
+    public static class MaterialPredicate implements Predicate<Material> {
+//        private final Material material;
+
+        @Override
+        public boolean test(Material material) {
+            switch (material) {
+                case STONE_SWORD:
+                case DIAMOND_SWORD:
+                case GOLDEN_SWORD:
+                case IRON_SWORD:
+                case NETHERITE_SWORD:
+                case WOODEN_SWORD:
+                case DIAMOND_AXE:
+                case GOLDEN_AXE:
+                case IRON_AXE:
+                case NETHERITE_AXE:
+                case STONE_AXE:
+                case WOODEN_AXE:
+                case FLINT_AND_STEEL:
+                case STONE_SHOVEL:
+                case DIAMOND_SHOVEL:
+                case GOLDEN_SHOVEL:
+                case IRON_SHOVEL:
+                case NETHERITE_SHOVEL:
+                case WOODEN_SHOVEL:
+                case FISHING_ROD:
+                case CHAINMAIL_HELMET:
+                case DIAMOND_HELMET:
+                case GOLDEN_HELMET:
+                case IRON_HELMET:
+                case LEATHER_HELMET:
+                case NETHERITE_HELMET:
+                case TURTLE_HELMET:
+                case CHAINMAIL_CHESTPLATE:
+                case DIAMOND_CHESTPLATE:
+                case GOLDEN_CHESTPLATE:
+                case IRON_CHESTPLATE:
+                case LEATHER_CHESTPLATE:
+                case NETHERITE_CHESTPLATE:
+                case LEATHER_LEGGINGS:
+                case CHAINMAIL_LEGGINGS:
+                case DIAMOND_LEGGINGS:
+                case GOLDEN_LEGGINGS:
+                case IRON_LEGGINGS:
+                case NETHERITE_LEGGINGS:
+                case CHAINMAIL_BOOTS:
+                case DIAMOND_BOOTS:
+                case GOLDEN_BOOTS:
+                case IRON_BOOTS:
+                case LEATHER_BOOTS:
+                case NETHERITE_BOOTS:
+                case TRIDENT:
+                case SHIELD:
+                case ELYTRA:
+                case SHEARS:
+                case BOW:
+                case CROSSBOW:
+                case DIAMOND_HORSE_ARMOR:
+                case GOLDEN_HORSE_ARMOR:
+                case IRON_HORSE_ARMOR:
+                case LEATHER_HORSE_ARMOR:
+                case DIAMOND_HOE:
+                case GOLDEN_HOE:
+                case IRON_HOE:
+                case NETHERITE_HOE:
+                case STONE_HOE:
+                case WOODEN_HOE:
+                    return false;
+                default:
+                    return true;
+            }
+//            return true;
+        }
+//        MaterialPredicate(Material material){
+//            this.material=material;
+//        }
+
     }
 
 
