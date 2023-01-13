@@ -622,6 +622,7 @@ public class AmountSelector implements CommandExecutor {
 
         public void setShowname(String showname){
 //            this.clear();
+
             ItemMeta itemMeta = item.getItemMeta();
             itemMeta.setDisplayName(showname);
             item.setItemMeta(itemMeta);
