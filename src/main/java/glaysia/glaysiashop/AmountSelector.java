@@ -6,6 +6,7 @@ import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.component.Label;
+import com.github.stefvanschie.inventoryframework.pane.component.Slider;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -68,7 +69,10 @@ public class AmountSelector implements CommandExecutor {
 //            item.setItemMeta()
 
             itemPane.addItem(new GuiItem(item));
-                gui.addPane(itemPane);
+//                gui.addPane(itemPane);
+
+//            Slider slider = new Slider(0, 0, 9, 6);
+//            gui.addPane(slider);
 
             itemPane.setOnClick(inventoryClickEvent -> {
                 preventTakeItem(inventoryClickEvent, gui);
@@ -76,70 +80,85 @@ public class AmountSelector implements CommandExecutor {
 
 
             //라벨
+            MyLabel nump10 = new MyLabel(6,0,1,1,Font.BIRCH_PLANKS,"0",gui,"0.1의자리");
+            MyLabel dot = new MyLabel(5,0,1,1,Font.BIRCH_PLANKS,".", gui,".");
+            MyLabel num1 = new MyLabel(4,0,1,1,Font.BIRCH_PLANKS,"0",gui,"1의자리");
+            MyLabel num10 = new MyLabel(3,0,1,1,Font.BIRCH_PLANKS,"0",gui,"10의자리");
+            MyLabel num100 = new MyLabel(2,0,1,1,Font.BIRCH_PLANKS,"0",gui,"100의자리");
+            MyLabel num1000 = new MyLabel(1,0,1,1,Font.BIRCH_PLANKS,"1",gui,"1000의자리");
+            MyLabel sign = new MyLabel(0,0,1,1,Font.BIRCH_PLANKS,"+",gui,"부호");
+            MyLabel sell = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",gui,"판매");
+            MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED,"Q",gui,"아이템선택창으로 돌아가기");
+            MyLabel goToOrderBook = new MyLabel(3,5,1,1,Font.STONE, "O", gui, "호가창으로 이동하기");
+            MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", gui, "내 주문 리스트로 이동하기");
+            MyLabel confirm1 = new MyLabel(4,5,1,1,Font.LIGHT_BLUE,"C",gui,"거래요청하기");
+            MyLabel confirm2_blue= new MyLabel(5,5,1,1,Font.BLUE,"C",gui,"거래요청확정하기(취소가능)");
+            MyLabel confirm2_gray = new MyLabel(5,5,1,1,Font.LIGHT_GRAY,"C",gui,"..");
+            confirm2_blue.setVisible(false);
+            confirm2_gray.setVisible(true);
+            confirm2_blue.setPriority(Pane.Priority.LOW);
+            confirm2_gray.setPriority(Pane.Priority.HIGH);
+            MyLabel amount10 = new MyLabel(4,2,2,1,Font.BIRCH_PLANKS,"64",gui,"거래개수");
 
-            Label nump10        = new Label(6, 0, 1, 1, Font.BIRCH_PLANKS);
-                nump10.setText("0");
-                gui.addPane(nump10);
-            Label dot           = new Label(5, 0, 1, 1, Font.BIRCH_PLANKS);
-                dot.setText(".");
-                gui.addPane(dot);
-            Label num1          = new Label(4, 0, 1, 1, Font.BIRCH_PLANKS);
-                num1.setText("0");
-                gui.addPane(num1);
-            Label num10         = new Label(3, 0, 1, 1, Font.BIRCH_PLANKS);
-                num10.setText("0");
-                gui.addPane(num10);
-            Label num100        = new Label(2, 0, 1, 1, Font.BIRCH_PLANKS);
-                num100.setText("0");
-                gui.addPane(num100);
-            Label num1000       = new Label(1, 0, 1, 1, Font.BIRCH_PLANKS);
-                num1000.setText("1");
-                gui.addPane(num1000);
+//            Label nump10        = new Label(6, 0, 1, 1, Font.BIRCH_PLANKS);
+//                nump10.setText("0");
+//                gui.addPane(nump10);
+//            Label dot           = new Label(5, 0, 1, 1, Font.BIRCH_PLANKS);
+//                dot.setText(".");
+//                gui.addPane(dot);
+//            Label num1          = new Label(4, 0, 1, 1, Font.BIRCH_PLANKS);
+//                num1.setText("0");
+//                gui.addPane(num1);
+//            Label num10         = new Label(3, 0, 1, 1, Font.BIRCH_PLANKS);
+//                num10.setText("0");
+//                gui.addPane(num10);
+//            Label num100        = new Label(2, 0, 1, 1, Font.BIRCH_PLANKS);
+//                num100.setText("0");
+//                gui.addPane(num100);
+//            Label num1000       = new Label(1, 0, 1, 1, Font.BIRCH_PLANKS);
+//                num1000.setText("1");
+//                gui.addPane(num1000);
+//            Label sign          = new Label(0, 0, 1, 1, Font.BIRCH_PLANKS);
+//                sign.setText("+");
+//                gui.addPane(sign);
+//            Label sell          = new Label(0,1,1,1,Font.BIRCH_PLANKS);
+//                sell.setText("S");
+//                gui.addPane(sell);
+//            Label backToPallete = new Label(2,5,1,1,Font.RED);
+//                backToPallete.setText("Q");
+//                gui.addPane(backToPallete);
+//            Label goToOrderBook = new Label(3,5,1,1,Font.STONE);
+//                goToOrderBook.setText("O");
+//                gui.addPane(goToOrderBook);
 
 
-            Label sign          = new Label(0, 0, 1, 1, Font.BIRCH_PLANKS);
-                sign.setText("+");
-                gui.addPane(sign);
-            Label sell          = new Label(0,1,1,1,Font.BIRCH_PLANKS);
-                sell.setText("S");
-                gui.addPane(sell);
 
+//            Label confirm1      = new Label(4,5,1,1,Font.LIGHT_BLUE);
+//                confirm1.setText("C");
+//                gui.addPane(confirm1);
+//            Label confirm2_blue = new Label(5,5,1,1,Font.BLUE);
+//                confirm2_blue.setText("C");
+//                confirm2_blue.setVisible(false);
+//                gui.addPane(confirm2_blue);
+//            Label confirm2_gray = new Label(5,5,1,1,Font.LIGHT_GRAY);
+//                confirm2_gray.setText("C");
+//                gui.addPane(confirm2_gray);
 
-            Label backToPallete = new Label(2,5,1,1,Font.RED);
-                backToPallete.setText("Q");
-                gui.addPane(backToPallete);
-            Label goToOrderBook = new Label(3,5,1,1,Font.STONE);
-                goToOrderBook.setText("O");
-                gui.addPane(goToOrderBook);
-            MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", gui);
+//            Label amount10      = new Label(4,2, 2,1, Font.BIRCH_PLANKS);
+//                amount10.setText("64");
+//                gui.addPane(amount10);
 
-
-            Label confirm1      = new Label(4,5,1,1,Font.LIGHT_BLUE);
-                confirm1.setText("C");
-                gui.addPane(confirm1);
-            Label confirm2_blue = new Label(5,5,1,1,Font.BLUE);
-                confirm2_blue.setText("C");
-                confirm2_blue.setVisible(false);
-                gui.addPane(confirm2_blue);
-
-            Label confirm2_gray = new Label(5,5,1,1,Font.LIGHT_GRAY);
-                confirm2_gray.setText("C");
-                gui.addPane(confirm2_gray);
-
-
-            Label amount10      = new Label(4,2, 2,1, Font.BIRCH_PLANKS);
-                amount10.setText("64");
-                gui.addPane(amount10);
-
-            MyLabel incrementItem16   = new MyLabel(4,3,1,1,Font.RED,"+", gui);
-            MyLabel incrementItem1    = new MyLabel(5,3,1,1,Font.PINK,"+", gui);
-            MyLabel decrementItem16   = new MyLabel(4,4,1,1,Font.BLUE,"-", gui);
-            MyLabel decrementItem1    = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,"-", gui);
+            MyLabel incrementItem16   = new MyLabel(4,3,1,1,Font.RED,"+", gui, "16개 증가");
+            MyLabel incrementItem1    = new MyLabel(5,3,1,1,Font.PINK,"+", gui,"1개 증가");
+            MyLabel decrementItem16   = new MyLabel(4,4,1,1,Font.BLUE,"-", gui, "16개 감소");
+            MyLabel decrementItem1    = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,"-", gui, "1개 감소");
 
             //자리수별 증가버튼
-            PlusMinusButton increment=new PlusMinusButton(true);
-            PlusMinusButton decrement=new PlusMinusButton(false);
+            PlusMinusButton increment=new PlusMinusButton(true, gui);
+            PlusMinusButton decrement=new PlusMinusButton(false, gui);
+
             double[] delta={0.1, 1, 10, 100, 1000};//자리수별 증감
+
             for(int i=0;i<5;i++){//자리수별 증가버튼
                 int finalI = i;
                 increment.button[i].setOnClick(event -> {
@@ -484,8 +503,8 @@ public class AmountSelector implements CommandExecutor {
         Trade trade = new Trade(sender.getName());
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage("mylist: "+myList.toString());
-        MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderListGui);
-        MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderListGui);
+        MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderListGui, "아이템선택창으로 돌아가기");
+        MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderListGui, "거래요청 창으로 가기");
         List<MyPane> myPanes = new ArrayList<>();
 //        sender.sendMessage("myPanes: "+);
         int idx=0;
@@ -631,20 +650,20 @@ public class AmountSelector implements CommandExecutor {
     }
 
     public class PlusMinusButton{
-        public Label[] button = new Label[5];
-        PlusMinusButton(boolean isPlus){
+        public MyLabel[] button = new MyLabel[5];
+        PlusMinusButton(boolean isPlus, ChestGui gui){
             Font font=(isPlus)?(Font.RED):(Font.GREEN);
             int x=(isPlus)?(8):(7);
-            button[0]=new Label(x, 0, 1, 1, font);
-            button[1]=new Label(x, 1, 1, 1, font);
-            button[2]=new Label(x, 2, 1, 1, font);
-            button[3]=new Label(x, 3, 1, 1, font);
-            button[4]=new Label(x, 4, 1, 1, font);
-            button[0].setText("t");
-            button[1].setText("O");
-            button[2].setText("T");
-            button[3].setText("H");
-            button[4].setText("M");
+            button[0]=new MyLabel(x, 0, 1, 1, font,"t",gui,"0.1의  자리(음수면 구매요청)");
+            button[1]=new MyLabel(x, 1, 1, 1, font,"O",gui,"1의    자리(음수면 구매요청)");
+            button[2]=new MyLabel(x, 2, 1, 1, font,"T",gui,"10의   자리(음수면 구매요청)");
+            button[3]=new MyLabel(x, 3, 1, 1, font,"H",gui,"100의  자리(음수면 구매요청)");
+            button[4]=new MyLabel(x, 4, 1, 1, font,"M",gui,"1000의 자리(음수면 구매요청)");
+//            button[0].setText("t");
+//            button[1].setText("O");
+//            button[2].setText("T");
+//            button[3].setText("H");
+//            button[4].setText("M");
         }
     }
     private double combinePlaceValues(int thousands, int hundreds, int tens, int ones, int t, boolean isPlus) {
@@ -658,6 +677,22 @@ public class AmountSelector implements CommandExecutor {
             Label num10,
             Label num1,
             Label nump10,
+            boolean isPlus
+    ) {
+        int thousands=Integer.parseInt(num1000.getText());
+        int hundreds=Integer.parseInt(num100.getText());
+        int tens=Integer.parseInt(num10.getText());
+        int ones=Integer.parseInt(num1.getText());
+        int t=Integer.parseInt(nump10.getText());
+        double result=thousands*1000 + hundreds*100 + tens*10 + ones + t*0.1;
+        return (isPlus)?(result):(-result);
+    }
+    private double combinePlaceValues(
+            MyLabel num1000,
+            MyLabel num100,
+            MyLabel num10,
+            MyLabel num1,
+            MyLabel nump10,
             boolean isPlus
     ) {
         int thousands=Integer.parseInt(num1000.getText());

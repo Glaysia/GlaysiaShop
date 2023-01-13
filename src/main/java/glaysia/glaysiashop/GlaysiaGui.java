@@ -6,6 +6,7 @@ package glaysia.glaysiashop;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.pane.component.Slider;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -78,6 +79,8 @@ public class GlaysiaGui implements CommandExecutor {
                 .show((Predicate<Material>)materialPredicate) //decide what items are displayed(e.g. flammable only)
                 .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                 .build();
+
+
         itemPalette.show((Player)sender);
     }
 
