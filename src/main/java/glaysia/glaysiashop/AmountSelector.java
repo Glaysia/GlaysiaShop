@@ -87,7 +87,7 @@ public class AmountSelector implements CommandExecutor {
             MyLabel num100 = new MyLabel(2,0,1,1,Font.BIRCH_PLANKS,"0",gui,"100의자리");
             MyLabel num1000 = new MyLabel(1,0,1,1,Font.BIRCH_PLANKS,"1",gui,"1000의자리");
             MyLabel sign = new MyLabel(0,0,1,1,Font.BIRCH_PLANKS,"+",gui,"부호");
-            MyLabel sell = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",gui,"판매");
+            MyLabel sell = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",gui,"판매요청");
             MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED,"Q",gui,"아이템선택창으로 돌아가기");
             MyLabel goToOrderBook = new MyLabel(3,5,1,1,Font.STONE, "O", gui, "호가창으로 이동하기");
             MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", gui, "내 주문 리스트로 이동하기");
@@ -180,10 +180,12 @@ public class AmountSelector implements CommandExecutor {
                     if(!isGreaterThanZero) {
                         sign.setText("-");
                         sell.setText("B");
+                        sell.setShowName("구매요청");
                     }
                     else {
                         sign.setText("+");
                         sell.setText("S");
+                        sell.setShowName("판매요청");
                     }
 
                     double numWillBeString=(isGreaterThanZero)?(num):(-num);
@@ -606,6 +608,9 @@ public class AmountSelector implements CommandExecutor {
             super(x,y,length,height,font);
             super.setText(text);
             gui.addPane(this);
+        }
+        private void setShowName(String showName){
+            super.setText(this.getText(),showName);
         }
     }
     public static class MyPane extends OutlinePane{
