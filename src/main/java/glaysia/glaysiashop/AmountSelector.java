@@ -14,6 +14,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
@@ -22,9 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 import java.util.*;
-import java.util.logging.Logger;
 
-import static glaysia.glaysiashop.GlaysiaShop.log;
 import static java.lang.Math.*;
 
 public class AmountSelector implements CommandExecutor {
@@ -32,8 +31,9 @@ public class AmountSelector implements CommandExecutor {
     CommandSender sender=null;
     private ChestGui gui = new ChestGui(6, "거래요청 창 §8 R");
     private ItemPaletteGUI itemPaletteGUI=null;
-    private OrderBookGui orderBookGui = null;
+    private OrderBookGui askOrderBookGui = null;
     private OrderBookGui myOrderListGui = null;
+
     @NotNull
     private Material material=Material.STONE;
     @NotNull
@@ -51,8 +51,8 @@ public class AmountSelector implements CommandExecutor {
     ){
         this.sender=sender;
         this.itemPaletteGUI=itemPaletteGUI;
-        orderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래", material);
-        myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 우 거래취소, 좌 정보출력");
+        askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래", material);
+        myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
 
         if (sender instanceof Player) {
 
@@ -71,8 +71,7 @@ public class AmountSelector implements CommandExecutor {
                 gui.addPane(itemPane);
 
             itemPane.setOnClick(inventoryClickEvent -> {
-                ((Player)sender).closeInventory();
-                gui.show((HumanEntity) sender);
+                preventTakeItem(inventoryClickEvent, gui);
             });
 
 
@@ -251,7 +250,7 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("호가§8§lO§r창으로 이동합니다.");
                         setGuiToOrderBook();
-                        orderBookGui.show((HumanEntity) sender);
+                        askOrderBookGui.show((HumanEntity) sender);
                     }
             );
             goToMyOrderList.setOnClick(
@@ -321,6 +320,7 @@ public class AmountSelector implements CommandExecutor {
                         if(nullTrade.getAvailOrderNumberPerUser(sender.getName())>44){
                             sender.sendMessage("현재 거래 개수 제한이 44개입니다.추후에 늘릴게요");
                         }
+
                         else {
                             if(isPlus){//판매
                                 if(item_is_enough_so_well_subtracted) {
@@ -437,8 +437,9 @@ public class AmountSelector implements CommandExecutor {
         OutlinePane itemPane = new OutlinePane(4, 5, 1, 1);
         itemPane.addItem(new GuiItem(item));
         itemPane.setOnClick(inventoryClickEvent -> {
-            ((Player)sender).closeInventory();
-            orderBookGui.show((HumanEntity) sender);
+//            ((Player)sender).closeInventory();
+//            orderBookGui.show((HumanEntity) sender);
+            preventTakeItem(inventoryClickEvent, askOrderBookGui);
         });
 
         AskPrice askPrice = new AskPrice();
@@ -465,9 +466,9 @@ public class AmountSelector implements CommandExecutor {
                 }
         );
 
-        orderBookGui.addPane(backToPallete);
-        orderBookGui.addPane(goToAmountselector);
-        orderBookGui.addPane(itemPane);
+        askOrderBookGui.addPane(backToPallete);
+        askOrderBookGui.addPane(goToAmountselector);
+        askOrderBookGui.addPane(itemPane);
 
     }
     //내 거래요청 리스트
@@ -489,12 +490,18 @@ public class AmountSelector implements CommandExecutor {
 //        sender.sendMessage("myPanes: "+);
         int idx=0;
         int max_idx=myList.toArray().length;
+        MyPane tmp;
+        Trade.Order tmpO;
 
         for(int row=0;row<5;row++){
             for(int col=0;col<9;col++){
                 if(idx==max_idx)
                     break;
-                myPanes.add(new MyPane(col,row,1,1,(myList.get(idx).material), myList.get(idx), myOrderListGui));
+
+                tmpO=myList.get(idx);
+                tmp=new MyPane(col,row,1,1,(myList.get(idx).material), tmpO, myOrderListGui,tmpO.toString());
+                myPanes.add(tmp);
+
                 idx++;
             }
             if(idx==max_idx)
@@ -513,6 +520,7 @@ public class AmountSelector implements CommandExecutor {
                         if(c.equals("LEFT")){
                             message="우클릭을 누르면 거래가 취소됩니다.\n"+inf;
 //                            sender.sendMessage(message);
+                            preventTakeItem(inventoryClickEvent, myOrderListGui);
                         }else if(c.equals("RIGHT")){
                             message="§d§l거래취소됐습니다.§r 좌클릭을 누르면 거래정보만 출력합니다.\n"+""+inf;
 //                            sender.sendMessage(message);
@@ -523,6 +531,7 @@ public class AmountSelector implements CommandExecutor {
                             addItemToInventoryWhenCancelTrade(pane.order);
                         }else{
                             message="우클릭은 거래취소, 좌클릭은 정보출력,\n";
+                            preventTakeItem(inventoryClickEvent, myOrderListGui);
                         }
 
                         sender.sendMessage(message);
@@ -611,7 +620,7 @@ public class AmountSelector implements CommandExecutor {
             this.order=order;
         }
 
-        private void setShowname(String showname){
+        public void setShowname(String showname){
 //            this.clear();
             ItemMeta itemMeta = item.getItemMeta();
             itemMeta.setDisplayName(showname);
@@ -679,11 +688,13 @@ public class AmountSelector implements CommandExecutor {
         List<Trade.Order> orderList_buyOnly;
         List<MyPane> orderPanes_sellOnly = new LinkedList<>();
         List<MyPane> orderPanes_buyOnly = new LinkedList<>();
-        private final Integer[] sellXArray = {3,2,1, 0,0,0,0, 1,2,3, 3,2,1,0};
+        List<MyPane> blackglass = new LinkedList<>();
+        private final Integer[] sellXArray = {3,2,1, 0,0,0,1, 2,3,3, 3,2,1,0};
         private final Integer[] sellYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
         private final Integer[] buyXArray = {5,6,7, 8,8,8,7, 6,5,5, 5,6,7,8};
         private final Integer[] buyYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
         AskPrice(){
+
             Trade trade = new Trade(material, (Player) sender);
             orderList = trade.getList();
 
@@ -697,8 +708,8 @@ public class AmountSelector implements CommandExecutor {
             sender.sendMessage("orderList_buyOnly: "+orderList_buyOnly.toString());
             
             for(int i=0;i<14;i++){
-                orderPanes_sellOnly.add(new MyPane(sellXArray[i], sellYArray[i], 1,1, material, null, orderBookGui, "test"));
-                orderPanes_buyOnly.add(new MyPane(buyXArray[i], buyYArray[i], 1,1, material, null, orderBookGui));
+                orderPanes_sellOnly.add(new MyPane(sellXArray[i], sellYArray[i], 1,1, material, null, askOrderBookGui, "test"));
+                orderPanes_buyOnly.add(new MyPane(buyXArray[i], buyYArray[i], 1,1, material, null, askOrderBookGui, "testa"));
             }
 
             for(int i=0;i<14;i++){
@@ -717,7 +728,8 @@ public class AmountSelector implements CommandExecutor {
                 }
             }
 
-            orderBookGui.update();
+            askOrderBookGui.update();
+            //
             for(MyPane i : orderPanes_sellOnly){
                 i.setOnClick(
                         inventoryClickEvent -> {
@@ -728,25 +740,28 @@ public class AmountSelector implements CommandExecutor {
 
                             if(click.equals("LEFT")){
                                 message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
+                                preventTakeItem(inventoryClickEvent, askOrderBookGui);
                             }else if(click.equals("RIGHT")){
-
                                 if(i_trade.enoughMoney((Player)sender)) {
+                                    addItemToInventoryWhenCancelTrade(i.order);
+
                                     message = "거래가 완료됐습니다. 환불은 안됨 " + info;
+                                    i.setVisible(false);
+                                    i.clear();
                                 }else{
                                     message = "돈이 모자란데요?";
+                                    preventTakeItem(inventoryClickEvent, askOrderBookGui);
                                 }
-
-                                i.setVisible(false);
-                                i.clear();
-                                orderBookGui.update();
+                                askOrderBookGui.update();
                             }else{
                                 message="우클릭은 거래승낙, 좌클릭은 정보출력";
+                                preventTakeItem(inventoryClickEvent, askOrderBookGui);
                             }
                             sender.sendMessage(message);
                         }
                 );
             }
-
+            askOrderBookGui.update();
             for(MyPane i : orderPanes_buyOnly){
                 i.setOnClick(
                         inventoryClickEvent -> {
@@ -757,24 +772,39 @@ public class AmountSelector implements CommandExecutor {
 
                             if(click.equals("LEFT")){
                                 message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
+                                preventTakeItem(inventoryClickEvent, askOrderBookGui);
                             }else if(click.equals("RIGHT")){
-
-                                if(i_trade.enoughItem((Player)sender)) {
+                                if(i_trade.enoughItemSoPaid((Player)sender)) {
                                     message = "거래가 완료됐습니다. 환불은 안됨 " + info;
+                                    i.setVisible(false);
+                                    i.clear();
                                 }else{
                                     message = "아이템이 모자란데요?";
+                                    preventTakeItem(inventoryClickEvent, askOrderBookGui);
                                 }
-
-                                i.setVisible(false);
-                                i.clear();
-                                orderBookGui.update();
+                                askOrderBookGui.update();
                             }else{
                                 message="우클릭은 거래승낙, 좌클릭은 정보출력";
+                                preventTakeItem(inventoryClickEvent, askOrderBookGui);
                             }
+
                             sender.sendMessage(message);
                         }
                 );
             }
+
+//            ItemStack itemStack = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            for(int i=0; i<6;i++){
+                blackglass.add(new MyPane(4,i,1,1,Material.BLACK_STAINED_GLASS_PANE,null,askOrderBookGui,"testt"));
+            }
+            for(MyPane i : blackglass){
+                i.setOnClick(
+                        inventoryClickEvent -> {
+                            preventTakeItem(inventoryClickEvent, askOrderBookGui);
+                        }
+                );
+            }
+            askOrderBookGui.update();
 
         }
 
@@ -833,4 +863,16 @@ public class AmountSelector implements CommandExecutor {
             }
         }
     }
+
+    private void preventTakeItem(InventoryClickEvent inventoryClickEvent, OrderBookGui gui) {
+        inventoryClickEvent.getWhoClicked().closeInventory();
+        gui.update();
+        gui.show(inventoryClickEvent.getWhoClicked());
+    }
+    private void preventTakeItem(InventoryClickEvent inventoryClickEvent, ChestGui gui) {
+        inventoryClickEvent.getWhoClicked().closeInventory();
+        gui.update();
+        gui.show(inventoryClickEvent.getWhoClicked());
+    }
+
 }

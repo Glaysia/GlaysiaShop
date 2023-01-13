@@ -6,10 +6,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,7 +19,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import static glaysia.glaysiashop.GlaysiaShop.log;
 import static java.lang.Math.abs;
-import static java.lang.Math.sqrt;
 
 public class Trade {
     private static int order_id=0;          //거래번호
@@ -69,8 +66,8 @@ public class Trade {
             player.sendMessage(this.toString());
         }
         public String toString(){
-            String sellOrBuy = is_selling?"판매":"구매";
-            return "주문자 이름: "+trader+" 거래품목: "+material.toString()+" 가격: "+Double.toString(price)+" 개수: "+Integer.toString(amount) + " 개당 가격: "+Double.toString(pricePerAmount)+" 거래유형은 "+sellOrBuy+"입니다.";
+            String sellOrBuy = is_selling?" 판매요청":" 구매요청";
+            return "주문자 이름: "+trader+" 거래품목: "+material.toString()+" 가격: "+Double.toString(price)+" 개수: "+Integer.toString(amount) + " 개당 가격: "+Double.toString(pricePerAmount)+sellOrBuy+"입니다.";
         }
     }
 
@@ -261,18 +258,17 @@ public class Trade {
                 tmp=false;
             }
             money_is_well_paid=tmp;
+            item_is_well_delivered=moveOrderToDone(dataIO);
         }else{
             money_is_well_paid=false;
             item_is_well_delivered=false;
         }
 
-        item_is_well_delivered=moveOrderToDone(dataIO);
-
         return money_is_well_paid&&money_is_enough_so_well_withdrawed&&item_is_enough_so_well_subtracted&&item_is_well_delivered;
 
     }
 
-    public boolean enoughItem(HumanEntity player){
+    public boolean enoughItemSoPaid(HumanEntity player){
         //A는 buyer B는 seller
         //구매요청 시 A는 돈을 뻇김
         //요청수락 시 A는 아이템을 받음, B는 아이템을 뺏김 돈을 받음 << 이게 중요
@@ -426,7 +422,7 @@ public class Trade {
                 inventory.setStorageContents(itemStacks);
                 sender.sendMessage(Arrays.asList(arrAmount).toString());
                 sender.sendMessage(Arrays.asList(nullIdx).toString());
-                sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
+//                sender.sendMessage(itemStackList.toString()+Integer.toString(maxAmount));
                 //debug
                 return true;
             }else{
@@ -434,20 +430,6 @@ public class Trade {
             }
     }
 
-//    public boolean addPlayersInventoryWhenTrade(Player sender,Material material,int amount){
-//        PlayerInventory inventory =  (sender).getInventory();
-//        ItemStack[] itemStacks = inventory.getStorageContents();
-//        List<ItemStack> temp=Arrays.asList(itemStacks);
-//        List<ItemStack> itemStackList =new ArrayList<>(temp);
-//        ItemStack item = new ItemStack(material);
-//        item.setAmount(amount);
-//        Integer[] nullIdx = this.getNullIdx(itemStackList);
-//
-//        itemStackList.add(item);
-//        itemStacks = itemStackList.toArray(new ItemStack[itemStackList.size()]);
-//        inventory.setStorageContents(itemStacks);
-//        return true;
-//    }
 
     public Integer[] divideBy64(int amount){
         int quotient = (amount/64);

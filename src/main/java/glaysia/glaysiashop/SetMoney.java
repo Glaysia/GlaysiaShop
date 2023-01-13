@@ -23,6 +23,7 @@ public class SetMoney implements CommandExecutor {
         //          0       1
 
         if(sender instanceof Player){ //명령어를 사용자가 입력했으면
+
             if(args.length!=2){
                 sender.sendMessage("§4잘못된 입력");
                 return false;
@@ -39,15 +40,20 @@ public class SetMoney implements CommandExecutor {
 
             Server server=sender.getServer();
             OfflinePlayer oPlayer=(OfflinePlayer) server.getPlayer(args[0]);
-            if(oPlayer==null){
-                oPlayer=server.getOfflinePlayer(args[0]);
+            boolean success;
+
+            try{
+                if(oPlayer==null){
+                    oPlayer=server.getOfflinePlayer(args[0]);
+                }
+                double lastMoney=Double.parseDouble(args[1]);
+                success=setMoney(oPlayer, econ, lastMoney);
+            }catch (Exception e){
+                sender.sendMessage("잘못된 입력"+e.toString());
+                success=false;
             }
 
-            double lastMoney=Double.parseDouble(args[1]);
-
-            boolean success=setMoney(player, econ, lastMoney);
-
-            return true;
+            return success;
         }else if(sender instanceof ConsoleCommandSender){
             //콘솔창에서 사용한 경우
             sender.sendMessage("콘솔에서는 사용할 수 없습니다.");
@@ -77,6 +83,9 @@ public class SetMoney implements CommandExecutor {
         DataIO dataIO = new DataIO(player);
 
         return dataIO.writeYmlIfNotWritten(player, econ);
+    }
+    public static boolean setMoney(OfflinePlayer player, Economy econ, double money){
+       return setMoney(player.getPlayer(), econ, money);
     }
 
     public static boolean addMoney(Player player, Economy econ, double dMoney){

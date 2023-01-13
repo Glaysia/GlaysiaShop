@@ -3,6 +3,7 @@ import java.io.*;
 
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
@@ -86,7 +87,7 @@ public class DataIO {
         Map<String, Object> playerData = null;
         playerData = YmlReader.readYml(this.USERDATAFILENAME);
         playerData = (Map<String, Object>) playerData.get(header);
-        player.sendMessage("test" + playerData.toString());
+//        player.sendMessage("test" + playerData.toString());
         return playerData.containsKey(player.getName());
 //        return true;
     }
@@ -550,6 +551,20 @@ public class DataIO {
         }
         return success;
     }
+    public boolean setMoneyOfDBFromPlayer(OfflinePlayer player, double money) {
+
+
+        boolean success = writePlayerToDB(money);
+        if (!isTherePlayerInYml()) {//파일에 없을 때
+            String message = success ? "계좌가 없습니다. 계좌를 만듭니다." : "파일생성 실패";
+//            player.sendMessage(message);
+        } else {
+            String message = success ? "계좌에 금액을 저장하였습니다" : "파일저장 실패";
+//            player.sendMessage(message);
+        }
+        return success;
+    }
+
 
     public double getMoneyFromYml() {
         return YmlReader.getMoneyFromYml(USERDATAFILENAME);

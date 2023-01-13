@@ -2,20 +2,26 @@ package glaysia.glaysiashop;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static glaysia.glaysiashop.GlaysiaShop.getEconomy;
 import static glaysia.glaysiashop.GlaysiaShop.log;
+import static java.lang.Math.abs;
 
 public class DoneOrder implements CommandExecutor {
     private Player sender;
@@ -112,8 +118,9 @@ public class DoneOrder implements CommandExecutor {
             if(idx==max_idx)
                 break;
         }
-
+        DataIO dataIO=new DataIO();;
         for(AmountSelector.MyPane i : myPanes){
+
             i.setOnClick(
                     inventoryClickEvent -> {
                         String info = i.order.toString();
@@ -123,12 +130,15 @@ public class DoneOrder implements CommandExecutor {
 
                         if(!click.equals("SHIFT_LEFT")){
                             message = "시프트 눌러서 한 번에 가져가셈\n"+info;
+                            preventTakeItem(inventoryClickEvent, gui);
+//                            addItemToInventoryWhenCancelTrade(i.order, getEconomy());
                             inventoryClickEvent.getInventory().close();
                             gui.show((HumanEntity) sender);
                         }else{
                             if(isThereSpace(inventoryClickEvent.getInventory().getContents())){
-                                inventoryClickEvent.getInventory().addItem(new ItemStack(i.order.material,i.order.amount));
+                                addItemToInventoryWhenCancelTrade(i.order, getEconomy());
                             }
+                            dataIO.setDoneOrderCompletedToDB(i.order);
                             i.clear();
                             gui.update();
                         }
@@ -140,9 +150,28 @@ public class DoneOrder implements CommandExecutor {
         gui.show((HumanEntity) sender);
     }
 
+    private boolean addItemToInventoryWhenCancelTrade(Trade.Order order, Economy econ){
+        try{
+            if(order.is_selling) {
+                PlayerInventory inventory = ((Player) sender).getInventory();
+                ItemStack itemStack = new ItemStack(order.material);
+                itemStack.setAmount(order.amount);
+                inventory.addItem(itemStack);
+            }
+            return true;
+        }
+        catch (Exception e){
+            sender.sendMessage(e.toString());
+            return false;
+        }
+    }
+    private void preventTakeItem(InventoryClickEvent inventoryClickEvent, AmountSelector.OrderBookGui gui) {
+        inventoryClickEvent.getWhoClicked().closeInventory();
+        gui.show(inventoryClickEvent.getWhoClicked());
+    }
     private boolean isThereSpace(ItemStack[] itemStacks){
         for(ItemStack i : itemStacks){
-            if(i.getType()==Material.AIR){
+            if(i==null){
                 return true;
             }
         }

@@ -34,6 +34,7 @@ public class Money implements CommandExecutor { //명령어 처리 클래스는 
             else if(args.length == 1){
                 player = (OfflinePlayer) sender.getServer().getOfflinePlayer(args[0]);
             }
+
             else {
                 sender.sendMessage("§4잘못된 입력");
                 return false;
@@ -42,8 +43,7 @@ public class Money implements CommandExecutor { //명령어 처리 클래스는 
             double money=econ.getBalance(player);
             sender.sendMessage("잔액: §e"+Double.toString(money)+"$");
 
-            dataIO.setMoneyOfDBFromPlayer(money);
-
+            dataIO.setMoneyOfDBFromPlayer(player, money);
             return true;
         }
         else if (sender instanceof ConsoleCommandSender) {
