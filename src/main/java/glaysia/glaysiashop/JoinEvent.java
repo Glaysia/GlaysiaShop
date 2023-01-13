@@ -20,7 +20,7 @@ public class JoinEvent implements Listener {
         if(message.length()==0){
             event.setJoinMessage("§cI made my first join plugin!");
         }else{
-            event.setJoinMessage(message);
+            player.sendMessage(message);
         }
         // This sets the join message. (Replaces the default join message)
     }

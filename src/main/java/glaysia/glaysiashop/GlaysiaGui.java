@@ -44,7 +44,8 @@ public class GlaysiaGui implements CommandExecutor {
 
         if (sender instanceof Player) { //명령어를 사용자가 입력했으면
             itemPalette = new ItemPaletteGUI.Builder("아이템선택§8§lQ§r 창")
-                    .show(Material::isFlammable) //decide what items are displayed(e.g. flammable only)
+                    .show(Material::isBlock) //decide what items are displayed(e.g. flammable only)
+                    .show(Material::isItem) //decide what items are displayed(e.g. flammable only)
                     .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                     .build();
 
