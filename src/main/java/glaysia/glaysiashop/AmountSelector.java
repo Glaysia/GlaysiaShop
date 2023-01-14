@@ -288,8 +288,8 @@ public class AmountSelector implements CommandExecutor {
                     inventoryClickEvent -> {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("호가§8§lO§r창으로 이동합니다.");
-                        setGuiToOrderBook();
                         askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래");
+                        setGuiToOrderBook();
                         askOrderBookGui.show((HumanEntity) sender);
 
                     }
