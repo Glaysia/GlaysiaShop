@@ -25,9 +25,7 @@ public class GlaysiaShop extends JavaPlugin {
     private static Economy econ = null;
     private static Permission perms = null;
     private static Chat chat = null;
-    public static ItemPaletteGUI itemPalette=null;
-    public static Player tradingPlayer;
-
+        //    public static ChestGui
 
     @Override
     public void onDisable() {
@@ -56,7 +54,6 @@ public class GlaysiaShop extends JavaPlugin {
 
         getCommand("shop").setExecutor(new GlaysiaGui(this.getEconomy()));
         getCommand("done").setExecutor(new DoneOrder());
-
 //        getCommand("nav").setExecutor(new AmountSelector(this.getEconomy()));
         registerEvents();
     }

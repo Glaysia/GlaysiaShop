@@ -61,7 +61,7 @@ commands:
   done:
     description: done
     usage: /<command>
-    permission: glaysia.done
+    permission: glaysiashop.done
     permission-message: 권한
 
 

@@ -7,10 +7,10 @@ import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
 import com.github.stefvanschie.inventoryframework.pane.Pane;
 import com.github.stefvanschie.inventoryframework.pane.component.Label;
-import com.github.stefvanschie.inventoryframework.pane.component.Slider;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -29,15 +29,29 @@ import java.util.*;
 import static java.lang.Math.*;
 
 public class AmountSelector implements CommandExecutor {
+    public static Player tradingPlayer;
+    public static ItemPaletteGUI itemPaletteGUI = null;
+    public static OrderBookGui askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래");
+    public static OrderBookGui myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
+    public static OrderBookGui askGui = new OrderBookGui("거래요청 창§8 R");
+    public static long time = new Date().getTime();
+
+    public static boolean isNotTrading(){
+
+        if(itemPaletteGUI==null){
+            return askOrderBookGui.getViewers().size()==0&&myOrderListGui.getViewers().size()==0&&askGui.getViewers().size()==0;
+        }
+        return itemPaletteGUI.getViewers().size()==0&&askOrderBookGui.getViewers().size()==0&&myOrderListGui.getViewers().size()==0&&askGui.getViewers().size()==0;
+    }
 
     CommandSender sender=null;
-    private ChestGui gui = new ChestGui(6, "거래요청 창 §8 R");
-    private ItemPaletteGUI itemPaletteGUI=null;
-    private OrderBookGui askOrderBookGui = null;
-    private OrderBookGui myOrderListGui = null;
+//    private ChestGui gui = new ChestGui(6, "거래요청 창 §8 R");
+//    private ItemPaletteGUI itemPaletteGUI = null;
+//    private OrderBookGui askOrderBookGui = null;
+//    private OrderBookGui myOrderListGui = null;
 
     @NotNull
-    private Material material=Material.STONE;
+    private static Material material=Material.STONE;
     @NotNull
     private Economy econ = null;
     public AmountSelector(Economy econ){
@@ -47,61 +61,61 @@ public class AmountSelector implements CommandExecutor {
     //거래요청 창
     public boolean onCommand(
             CommandSender sender,
-            org.bukkit.command.Command command,
-            String label, String[] args, ChestGui gui,
-            ItemPaletteGUI itemPaletteGUI, Material material
+            Command command,
+            String label, String[] args,
+            Material material
     ){
         this.sender=sender;
-        this.itemPaletteGUI=itemPaletteGUI;
-        askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래", material);
 
-        myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
+//        itemPaletteGUI=itemPaletteGUI;
 
 
         if (sender instanceof Player) {
-
-            this.gui=gui;
-            this.material=material;
+//            this.askGui =gui;
+            AmountSelector.material = material;
+            sender.sendMessage(String.format("당신이 고른 것 %s!", AmountSelector.material));
 //            ChestGui gui =
-            gui.show((HumanEntity) sender);
+            askGui.show((HumanEntity) sender);
 
             //아이템
-            ItemStack item = new ItemStack(material);
+            ItemStack item = new ItemStack(AmountSelector.material);
             OutlinePane itemPane = new OutlinePane(3, 2, 1, 1);
+            askGui=new OrderBookGui("거래요청 창§8 R");
 
 //            item.setItemMeta()
 
             itemPane.addItem(new GuiItem(item));
-                gui.addPane(itemPane);
+            askGui.addPane(itemPane);
+            askGui.update();
 
 //            Slider slider = new Slider(0, 0, 9, 6);
 //            gui.addPane(slider);
 
             itemPane.setOnClick(inventoryClickEvent -> {
-                preventTakeItem(inventoryClickEvent, gui);
+                preventTakeItem(inventoryClickEvent, askGui);
             });
 
 
             //라벨
-            MyLabel nump10 = new MyLabel(6,0,1,1,Font.BIRCH_PLANKS,"0",gui,"0.1의자리");
-            MyLabel dot = new MyLabel(5,0,1,1,Font.BIRCH_PLANKS,".", gui,".");
-            MyLabel num1 = new MyLabel(4,0,1,1,Font.BIRCH_PLANKS,"0",gui,"1의자리");
-            MyLabel num10 = new MyLabel(3,0,1,1,Font.BIRCH_PLANKS,"0",gui,"10의자리");
-            MyLabel num100 = new MyLabel(2,0,1,1,Font.BIRCH_PLANKS,"0",gui,"100의자리");
-            MyLabel num1000 = new MyLabel(1,0,1,1,Font.BIRCH_PLANKS,"1",gui,"1000의자리");
-            MyLabel sign = new MyLabel(0,0,1,1,Font.BIRCH_PLANKS,"+",gui,"부호");
-            MyLabel sell = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",gui,"판매요청");
-            MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED,"Q",gui,"아이템선택창으로 돌아가기");
-            MyLabel goToOrderBook = new MyLabel(3,5,1,1,Font.STONE, "O", gui, "호가창으로 이동하기");
-            MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", gui, "내 주문 리스트로 이동하기");
-            MyLabel confirm1 = new MyLabel(4,5,1,1,Font.LIGHT_BLUE,"C",gui,"거래요청하기");
-            MyLabel confirm2_blue= new MyLabel(5,5,1,1,Font.BLUE,"C",gui,"거래요청확정하기(취소가능)");
-            MyLabel confirm2_gray = new MyLabel(5,5,1,1,Font.LIGHT_GRAY,"C",gui,"..");
+            MyLabel nump10 = new MyLabel(6,0,1,1,Font.BIRCH_PLANKS,"0",askGui,"0.1의자리");
+            MyLabel dot = new MyLabel(5,0,1,1,Font.BIRCH_PLANKS,".", askGui,".");
+            MyLabel num1 = new MyLabel(4,0,1,1,Font.BIRCH_PLANKS,"0",askGui,"1의자리");
+            MyLabel num10 = new MyLabel(3,0,1,1,Font.BIRCH_PLANKS,"0",askGui,"10의자리");
+            MyLabel num100 = new MyLabel(2,0,1,1,Font.BIRCH_PLANKS,"0",askGui,"100의자리");
+            MyLabel num1000 = new MyLabel(1,0,1,1,Font.BIRCH_PLANKS,"1",askGui,"1000의자리");
+            MyLabel sign = new MyLabel(0,0,1,1,Font.BIRCH_PLANKS,"+",askGui,"부호");
+            MyLabel sell = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",askGui,"판매요청");
+            MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED,"Q",askGui,"아이템선택창으로 돌아가기");
+            MyLabel goToOrderBook = new MyLabel(3,5,1,1,Font.STONE, "O", askGui, "호가창으로 이동하기");
+            MyLabel goToMyOrderList = new MyLabel(0,5,1,1,Font.JUNGLE_PLANKS, "M", askGui, "내 주문 리스트로 이동하기");
+            MyLabel confirm1 = new MyLabel(4,5,1,1,Font.LIGHT_BLUE,"C",askGui,"거래요청하기");
+            MyLabel confirm2_blue= new MyLabel(5,5,1,1,Font.BLUE,"C",askGui,"거래요청확정하기(취소가능)");
+            MyLabel confirm2_gray = new MyLabel(5,5,1,1,Font.LIGHT_GRAY,"C",askGui,"..");
             confirm2_blue.setVisible(false);
             confirm2_gray.setVisible(true);
             confirm2_blue.setPriority(Pane.Priority.LOW);
             confirm2_gray.setPriority(Pane.Priority.HIGH);
-            MyLabel amount10 = new MyLabel(4,2,2,1,Font.BIRCH_PLANKS,"64",gui,"거래개수");
+            MyLabel amount10 = new MyLabel(4,2,2,1,Font.BIRCH_PLANKS,"64",askGui,"거래개수");
 
 //            Label nump10        = new Label(6, 0, 1, 1, Font.BIRCH_PLANKS);
 //                nump10.setText("0");
@@ -151,14 +165,14 @@ public class AmountSelector implements CommandExecutor {
 //                amount10.setText("64");
 //                gui.addPane(amount10);
 
-            MyLabel incrementItem16   = new MyLabel(4,3,1,1,Font.RED,"+", gui, "16개 증가");
-            MyLabel incrementItem1    = new MyLabel(5,3,1,1,Font.PINK,"+", gui,"1개 증가");
-            MyLabel decrementItem16   = new MyLabel(4,4,1,1,Font.BLUE,"-", gui, "16개 감소");
-            MyLabel decrementItem1    = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,"-", gui, "1개 감소");
+            MyLabel incrementItem16   = new MyLabel(4,3,1,1,Font.RED,"+", askGui, "16개 증가");
+            MyLabel incrementItem1    = new MyLabel(5,3,1,1,Font.PINK,"+", askGui,"1개 증가");
+            MyLabel decrementItem16   = new MyLabel(4,4,1,1,Font.BLUE,"-", askGui, "16개 감소");
+            MyLabel decrementItem1    = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,"-", askGui, "1개 감소");
 
             //자리수별 증가버튼
-            PlusMinusButton increment=new PlusMinusButton(true, gui);
-            PlusMinusButton decrement=new PlusMinusButton(false, gui);
+            PlusMinusButton increment=new PlusMinusButton(true, askGui);
+            PlusMinusButton decrement=new PlusMinusButton(false, askGui);
 
             double[] delta={0.1, 1, 10, 100, 1000};//자리수별 증감
 
@@ -207,7 +221,7 @@ public class AmountSelector implements CommandExecutor {
                     num1.setVisible(true);
                     nump10.setVisible(true);
 
-                    gui.update();
+                    askGui.update();
 
 
                 });
@@ -251,12 +265,12 @@ public class AmountSelector implements CommandExecutor {
                     num1.setVisible(true);
                     nump10.setVisible(true);
 
-                    gui.update();
+                    askGui.update();
 
 
                 });
-                gui.addPane(increment.button[i]);
-                gui.addPane(decrement.button[i]);
+                askGui.addPane(increment.button[i]);
+                askGui.addPane(decrement.button[i]);
             }
 
 
@@ -266,6 +280,7 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("아이템선택§8§lQ§r 창으로 돌아갑니다.");
                         itemPaletteGUI.show((HumanEntity) sender);
+
                     }
             );
 
@@ -274,7 +289,9 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("호가§8§lO§r창으로 이동합니다.");
                         setGuiToOrderBook();
+                        askOrderBookGui = new OrderBookGui("호가§8§lO§r창, 우클릭 거래");
                         askOrderBookGui.show((HumanEntity) sender);
+
                     }
             );
             goToMyOrderList.setOnClick(
@@ -282,12 +299,15 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("내 거래목록 §8§lM§r창으로 이동합니다.");
                         setOrderList();;
+                        myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
                         myOrderListGui.show((HumanEntity) sender);
+
                     }
             );
             //거래요청
             confirm1.setOnClick(
                     inventoryClickEvent -> {
+
                         boolean isPlus=sign.getText().equals("+");
                         String sellOrBuy=(isPlus)?" 판매":" 구매";
                         double price = combinePlaceValues(num1000, num100, num10, num1, nump10, isPlus);
@@ -315,12 +335,14 @@ public class AmountSelector implements CommandExecutor {
 
                         confirm2_blue.setVisible(true);
                         confirm2_blue.setPriority(Pane.Priority.HIGH);
-                        gui.update();
+                        askGui.update();
+
                     }
             );
             //거래확정
             confirm2_blue.setOnClick(
                     inventoryClickEvent -> {
+
                         Trade trade_s = new Trade(econ);
                         boolean isPlus=sign.getText().equals("+");
                         String sellOrBuy=(isPlus)?" 판매":" 구매";
@@ -369,8 +391,8 @@ public class AmountSelector implements CommandExecutor {
                         confirm2_gray.setPriority(Pane.Priority.HIGH);
                         confirm2_blue.setVisible(false);
                         confirm2_blue.setPriority(Pane.Priority.LOW);
+                        askGui.update();
 
-                        gui.update();
 
                     }
             );
@@ -380,39 +402,46 @@ public class AmountSelector implements CommandExecutor {
 
             incrementItem16.setOnClick(
                     inventoryClickEvent ->{
+
                         int amount=Integer.parseInt(amount10.getText().toString());
                         amount = (amount<=48)?(amount+16):64;
                         amount10.setText(Integer.toString(amount));
-                        gui.update();
+                        askGui.update();
+
                     }
             );
             incrementItem1.setOnClick(
                     inventoryClickEvent ->{
+
                         int amount=Integer.parseInt(amount10.getText().toString());
                         amount = (amount<=63)?(amount+1):64;
                         amount10.setText(Integer.toString(amount));
-                        gui.update();
+                        askGui.update();
+
                     }
             );
             decrementItem16.setOnClick(
                     inventoryClickEvent ->{
+
                         int amount=Integer.parseInt(amount10.getText().toString());
                         amount = (amount>=16)?(amount-16):0;
                         amount10.setText(Integer.toString(amount));
-                        gui.update();
+                        askGui.update();
+
                     }
             );
             decrementItem1.setOnClick(
                     inventoryClickEvent ->{
+
                         int amount=Integer.parseInt(amount10.getText().toString());
                         amount = (amount>=1)?(amount-1):0;
                         amount10.setText(Integer.toString(amount));
-                        gui.update();
+                        askGui.update();
                     }
             );
 
 
-            gui.show((HumanEntity)sender);
+            askGui.show((HumanEntity)sender);
 //            sender.sendMessage(material.toString());
 
             return true;
@@ -450,7 +479,7 @@ public class AmountSelector implements CommandExecutor {
             org.bukkit.command.Command command,
             String label, String[] args
     ) {
-        return onCommand(sender, command, label, args, gui, (ItemPaletteGUI) gui,  material);
+        return onCommand(sender, command, label, args,  material);
     }
 
 
@@ -486,7 +515,7 @@ public class AmountSelector implements CommandExecutor {
                 inventoryClickEvent -> {
                     ((Player)sender).closeInventory();
                     sender.sendMessage("거래요청§8§lR§r 창 으로 이동합니다.");
-                    gui.show((HumanEntity) sender);
+                    askGui.show((HumanEntity) sender);
                 }
         );
 
@@ -624,7 +653,7 @@ public class AmountSelector implements CommandExecutor {
                 inventoryClickEvent -> {
                     ((Player)sender).closeInventory();
                     sender.sendMessage("거래요청§8§lR§r 창 으로 이동합니다.\n");
-                    gui.show((HumanEntity) sender);
+                    askGui.show((HumanEntity) sender);
                 }
         );
 
@@ -634,7 +663,8 @@ public class AmountSelector implements CommandExecutor {
     }
 
     //호가창, 거래요청창 내가 만든 클래스
-    public static class OrderBookGui extends ChestGui{
+    public static class OrderBookGui extends MyChestGui{
+
         private Material material=null;
 
         OrderBookGui(String title, Material material){

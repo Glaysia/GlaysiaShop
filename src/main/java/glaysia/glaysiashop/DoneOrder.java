@@ -11,13 +11,11 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static glaysia.glaysiashop.GlaysiaShop.getEconomy;
 import static glaysia.glaysiashop.GlaysiaShop.log;
@@ -135,12 +133,12 @@ public class DoneOrder implements CommandExecutor {
                             inventoryClickEvent.getInventory().close();
                             gui.show((HumanEntity) sender);
                         }else{
-                            if(isThereSpace(inventoryClickEvent.getInventory().getContents())){
+                            if(isThereSpace(inventoryClickEvent.getInventory().getContents(), inventoryClickEvent.getWhoClicked())){
                                 addItemToInventoryWhenCancelTrade(i.order, getEconomy());
+                                dataIO.setDoneOrderCompletedToDB(i.order);
+                                i.clear();
+                                gui.update();
                             }
-                            dataIO.setDoneOrderCompletedToDB(i.order);
-                            i.clear();
-                            gui.update();
                         }
                         sender.sendMessage(message+click);
                     }
@@ -152,7 +150,7 @@ public class DoneOrder implements CommandExecutor {
 
     private boolean addItemToInventoryWhenCancelTrade(Trade.Order order, Economy econ){
         try{
-            if(order.is_selling) {
+            if(!order.is_selling) {
                 PlayerInventory inventory = ((Player) sender).getInventory();
                 ItemStack itemStack = new ItemStack(order.material);
                 itemStack.setAmount(order.amount);
@@ -169,12 +167,15 @@ public class DoneOrder implements CommandExecutor {
         inventoryClickEvent.getWhoClicked().closeInventory();
         gui.show(inventoryClickEvent.getWhoClicked());
     }
-    private boolean isThereSpace(ItemStack[] itemStacks){
-        for(ItemStack i : itemStacks){
-            if(i==null){
-                return true;
-            }
-        }
-        return false;
+    private boolean isThereSpace(ItemStack[] itemStacks, HumanEntity playerForDebug){
+        List<ItemStack> t = Arrays.asList(itemStacks);
+        playerForDebug.sendMessage(t.toString());
+
+        return t.contains(null);
+
+//        return false;
     }
+//    public boolean isThereSpace(Inventory inventory){
+//        inventory.
+//    }
 }

@@ -1,12 +1,7 @@
 package glaysia.glaysiashop;
 
 
-
-
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
-
-import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
-import com.github.stefvanschie.inventoryframework.pane.component.Slider;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -17,11 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-
+import java.util.Date;
 import java.util.function.Predicate;
 
-import static glaysia.glaysiashop.GlaysiaShop.itemPalette;
-import static glaysia.glaysiashop.GlaysiaShop.tradingPlayer;
+import static glaysia.glaysiashop.AmountSelector.*;
 
 
 public class GlaysiaGui implements CommandExecutor {
@@ -31,6 +25,7 @@ public class GlaysiaGui implements CommandExecutor {
     private String[] args;
 //    ItemPaletteGUI itemPalette=null;
     private Material material;
+
     private Economy econ;
     GlaysiaGui(Economy econ){
 
@@ -44,18 +39,20 @@ public class GlaysiaGui implements CommandExecutor {
         this.label=label;
         this.args=args;
 
+
         if (sender instanceof Player) { //명령어를 사용자가 입력했으면
-            if(itemPalette==null){
+
+            boolean isNotTrading=isNotTrading()&&(new Date().getTime()-time>=10000);
+            sender.sendMessage(Long.toString(new Date().getTime()-time));
+            if(isNotTrading){
                 command();
-            }
-            else if(itemPalette.getViewers().size()!=0){
+                time = new Date().getTime();
+            }else{
                 try {
                     sender.sendMessage(tradingPlayer.getName()+"님이 거래중입니다. 잠시만 기다려주세요.");
                 }catch (Exception e){
                     sender.sendMessage(e+"ㅎㅎ");
                 }
-            }else{
-                command();
             }
 
             return true;
@@ -73,15 +70,16 @@ public class GlaysiaGui implements CommandExecutor {
     void command(){
         tradingPlayer=(Player)sender;
         MaterialPredicate materialPredicate= new MaterialPredicate();
-
-        itemPalette = new ItemPaletteGUI.Builder("아이템선택§8§lQ§r 창")
+//        Material
+        itemPaletteGUI = new ItemPaletteGUI.Builder("아이템선택§8§lQ§r 창")
 //                .show(Material::isBlock) //decide what items are displayed(e.g. flammable only)
                 .show((Predicate<Material>)materialPredicate) //decide what items are displayed(e.g. flammable only)
                 .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                 .build();
 
 
-        itemPalette.show((Player)sender);
+
+        itemPaletteGUI.show((Player)sender);
     }
 
 
@@ -102,22 +100,21 @@ public class GlaysiaGui implements CommandExecutor {
         {
             Player player = (Player) event.getWhoClicked();
 //            player.getInventory().addItem(item);
-            player.sendMessage(String.format(ChatColor.BLUE + "당신이 고른 것 %s!", material));
+//            player.sendMessage(String.format(ChatColor.BLUE + "당신이 고른 것 %s!", material));
             AmountSelector amountSelector=new AmountSelector(econ);
             player.closeInventory();
 
 //            ((Player)sender).closeInventory();
 
-            ChestGui gui = new ChestGui(6, "거래요청§8§lR§r 창");
+//            ChestGui gui = new ChestGui(6, "거래요청§8§lR§r 창");
 
-            amountSelector.onCommand(sender, command, label, args, gui, itemPalette, material);
+            amountSelector.onCommand(sender, command, label, args, material);
 
         });
     }
 
+    //** 내구도 있는 아이템은 상점에서 제외함 */
     public static class MaterialPredicate implements Predicate<Material> {
-//        private final Material material;
-
         @Override
         public boolean test(Material material) {
             switch (material) {
