@@ -104,7 +104,7 @@ public class DataIO {
     }
     */
 
-    private static class YmlReader {
+    static class YmlReader {
         public static Map<String, Object> readYml(String fileName) {
             try (Reader reader = new InputStreamReader(new FileInputStream(fileName), "UTF-8")) {
                 Yaml yaml = new Yaml();
@@ -167,7 +167,7 @@ public class DataIO {
 //        int lastOrder = (Integer) (((Map<String, Object>) (key_is_DIAMOND_Order.get(dummy))).size());
 //        return lastOrder;
 //    }
-    List<Map<String, Object>> getDoneOrderList(){
+    List<Trade.Order> getDoneOrderList(){
         Map<String, Object> key_is_glaysiashop;
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
 
@@ -177,11 +177,12 @@ public class DataIO {
         Map<String, Object> key_is_id;
         key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
-        List<Map<String, Object>> list = new LinkedList<>();
+        List<Trade.Order> list = new LinkedList<>();
 
         for(String key : key_is_id.keySet()){
             Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
-            list.add(item);
+            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), (Material) item.get("material"), (Boolean)item.get("is_selling"),
+                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
         }
         return list;
     }
