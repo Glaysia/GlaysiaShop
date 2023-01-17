@@ -147,9 +147,10 @@ public class Trade {
 //        this.list = new ArrayList<>();
 
         int last_order=dataIO.getLastOrder();
-        for(int i=1;i<=last_order;i++){
-            this.list.add(dataIO.getOrder(i));
-        }
+//        for(int i=1;i<=last_order;i++){
+//            this.list.add(dataIO.getOrder(i));
+//        }
+
 
         List<Integer> list_idx_for_remove = new ArrayList<>();
         int idx=0;

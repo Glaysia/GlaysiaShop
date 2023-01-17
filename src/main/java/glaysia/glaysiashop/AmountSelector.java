@@ -299,7 +299,7 @@ public class AmountSelector implements CommandExecutor {
                         ((Player)sender).closeInventory();
                         sender.sendMessage("내 거래목록 §8§lM§r창으로 이동합니다.");
                         myOrderListGui = new OrderBookGui("내 거래목록 §8§lM§r창 좌 정보출력, 우 거래취소");
-                        setOrderList();;
+                        setOrderList();
                         myOrderListGui.show((HumanEntity) sender);
 
                     }
@@ -833,6 +833,7 @@ public class AmountSelector implements CommandExecutor {
         private final Integer[] sellYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
         private final Integer[] buyXArray = {5,6,7, 8,8,8,7, 6,5,5, 5,6,7,8};
         private final Integer[] buyYArray = {0,0,0, 0,1,2,2, 2,2,3, 4,4,4,4};
+        //호가창
         AskPrice(){
 
             Trade trade = new Trade(material, (Player) sender);

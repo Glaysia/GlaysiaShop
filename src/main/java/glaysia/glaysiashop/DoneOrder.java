@@ -116,7 +116,8 @@ public class DoneOrder implements CommandExecutor {
             if(idx==max_idx)
                 break;
         }
-        DataIO dataIO=new DataIO();;
+        DataIO dataIO=new DataIO();
+
         for(AmountSelector.MyPane i : myPanes){
 
             i.setOnClick(
