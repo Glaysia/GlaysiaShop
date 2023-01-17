@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DataIO {
     private String USERDATAFILENAME= "./plugins/glaysiashop/userdata.yml";
@@ -103,7 +104,7 @@ public class DataIO {
     }
     */
 
-    private static class YmlReader {
+    static class YmlReader {
         public static Map<String, Object> readYml(String fileName) {
             try (Reader reader = new InputStreamReader(new FileInputStream(fileName), "UTF-8")) {
                 Yaml yaml = new Yaml();
@@ -167,18 +168,21 @@ public class DataIO {
 //        return lastOrder;
 //    }
     List<Trade.Order> getDoneOrderList(){
-        Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
+        Map<String, Object> key_is_glaysiashop;
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
 
-        Map<String, Object> key_is_DIAMOND_Order = new LinkedHashMap<>();
+        Map<String, Object> key_is_DIAMOND_Order;
         key_is_DIAMOND_Order = (Map<String, Object>) (key_is_glaysiashop.get(header));
 
-        Map<String, Object> key_is_id = new LinkedHashMap<>();
+        Map<String, Object> key_is_id;
         key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
-        LinkedList<Trade.Order> list = new LinkedList<>();
+        List<Trade.Order> list = new LinkedList<>();
+
         for(String key : key_is_id.keySet()){
-            list.add(getDoneOrder(Integer.parseInt(key)));
+            Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
+            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), (Material) item.get("material"), (Boolean)item.get("is_selling"),
+                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
         }
         return list;
     }
