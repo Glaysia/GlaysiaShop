@@ -50,6 +50,7 @@ public class Trade {
         public final int amount;                   //개수
         public final double pricePerAmount;
         public final String trader;             //주문자 이름
+
         public final Material material;         //아이템
         public final boolean is_selling;             //true면 판매요청, false면 구매요청
         public boolean is_canceled;            //취소됐는지 여부
@@ -70,10 +71,7 @@ public class Trade {
             return "주문자 이름: "+trader+" 거래품목: "+material.toString()+" 가격: "+Double.toString(price)+" 개수: "+Integer.toString(amount) + " 개당 가격: "+Double.toString(pricePerAmount)+sellOrBuy+"입니다.";
         }
     }
-
     private boolean is_saved;
-
-
     public Trade(double price, int amount, String trader, Material material, boolean was_there_error){
         String fileName="./plugins/glaysiashop/market.yml";
         File dataFile = new File(fileName);
@@ -93,8 +91,6 @@ public class Trade {
         is_saved = dataIO.writeOrderToDB(order);
 
     }
-
-
     private boolean saveToDB(Map<String, Object> mainDataMap, File dataFile){
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -109,7 +105,6 @@ public class Trade {
         //return someFunction(order); //DB에 저장에 성공했다면 true를 반환
         return true;
     }
-
     public boolean isSaved(){
         return is_saved;
     }
@@ -122,12 +117,11 @@ public class Trade {
 
         return outOrder;
     }
-
     Trade(int order_id){
         Order order = null;
         order=ReadFromDB(order_id);       //주문번호를 통해 DB에 접근하여 데이터를 꺼내옴
     }
-    private List<Order> list=new LinkedList<>();;
+    private List<Order> list=new LinkedList<>();
     public Trade(String traderName){
         DataIO dataIO = new DataIO();
 //        this.list = new ArrayList<>();
@@ -161,6 +155,19 @@ public class Trade {
             doneMessage=doneMessage+" "+i.toString()+"\n";
         }
     }
+    public void setOrderListToAll(){
+        DataIO dataIO = new DataIO();
+        this.list=dataIO.getAllOrderList();
+
+        this.list.removeIf(i -> (
+                (i.is_canceled || i.is_completed || i.is_there_error)
+        ));
+    }
+
+    public List<Order>getList(){
+        return this.list;
+    }
+
     String doneMessage="지금까지 완료된 구매주문:\n";
 
     public Trade(Material material, Player playerForDebug){
@@ -168,6 +175,7 @@ public class Trade {
 //        this.list = new ArrayList<>();
 
         int last_order=dataIO.getLastOrder();
+
         for(int i=1;i<=last_order;i++){
             this.list.add(dataIO.getOrder(i));
         }
@@ -196,7 +204,6 @@ public class Trade {
                     res=res+1;
                 }
             }
-
         }
         return res;
     }
@@ -364,7 +371,7 @@ public class Trade {
     */
 
 
-    public boolean setPlayersMoneyWhenTrade(CommandSender sender,  double price, boolean isSell) {
+    public boolean setPlayersMoneyWhenTrade(Player sender,  double price, boolean isSell) {
         return setPlayersMoneyWhenTrade((OfflinePlayer) sender, price, isSell);
     }
 
@@ -470,9 +477,7 @@ public class Trade {
         dataIO.writeOrderToDB(order);
     }
 
-    public List<Order>getList(){
-        return this.list;
-    }
+
 
 
 

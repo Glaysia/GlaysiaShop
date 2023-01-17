@@ -145,7 +145,6 @@ public class DataIO {
         }
     }
 
-
     public int getLastOrder() {
 
         Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
@@ -183,6 +182,22 @@ public class DataIO {
         return list;
     }
 
+    List<Trade.Order> getAllOrderList(){
+        Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
+        key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
+
+        Map<String, Object> key_is_DIAMOND_Order = new LinkedHashMap<>();
+        key_is_DIAMOND_Order = (Map<String, Object>) (key_is_glaysiashop.get(header));
+
+        Map<String, Object> key_is_id = new LinkedHashMap<>();
+        key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("Order"));
+
+        LinkedList<Trade.Order> list = new LinkedList<>();
+        for(String key : key_is_id.keySet()){
+            list.add(getOrder(Integer.parseInt(key)));
+        }
+        return list;
+    }
     public Trade.Order getOrder(int order_id) {
         Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
@@ -564,7 +579,6 @@ public class DataIO {
         }
         return success;
     }
-
 
     public double getMoneyFromYml() {
         return YmlReader.getMoneyFromYml(USERDATAFILENAME);
