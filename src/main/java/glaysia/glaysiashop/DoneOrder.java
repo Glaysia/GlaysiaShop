@@ -99,7 +99,7 @@ public class DoneOrder implements CommandExecutor {
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage(trade.doneMessage);
 
-        AmountSelector.OrderBookGui gui = new AmountSelector.OrderBookGui("구매완료 목록");
+        MyChestGui gui = new MyChestGui("구매완료 목록");
         List<AmountSelector.MyPane> myPanes = new ArrayList<>();
 
         AmountSelector.MyPane tmp;
@@ -166,7 +166,7 @@ public class DoneOrder implements CommandExecutor {
             return false;
         }
     }
-    private void preventTakeItem(InventoryClickEvent inventoryClickEvent, AmountSelector.OrderBookGui gui) {
+    private void preventTakeItem(InventoryClickEvent inventoryClickEvent, MyChestGui gui) {
         inventoryClickEvent.getWhoClicked().closeInventory();
         gui.show(inventoryClickEvent.getWhoClicked());
     }
