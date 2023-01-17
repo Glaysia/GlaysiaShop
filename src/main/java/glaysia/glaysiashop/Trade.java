@@ -146,13 +146,9 @@ public class Trade {
         DataIO dataIO = new DataIO();
 //        this.list = new ArrayList<>();
 
-        int last_order=dataIO.getLastOrder();
-//        for(int i=1;i<=last_order;i++){
-//            this.list.add(dataIO.getOrder(i));
-//        }
+        this.list=dataIO.getOrderList();
 
-
-        List<Integer> list_idx_for_remove = new ArrayList<>();
+//        List<Integer> list_idx_for_remove = new ArrayList<>();
         int idx=0;
         this.list.removeIf(i -> (
                 ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
@@ -180,21 +176,22 @@ public class Trade {
 
     public Trade(Material material, Player playerForDebug){
         DataIO dataIO = new DataIO();
-//        this.list = new ArrayList<>();
+////        this.list = new ArrayList<>();
+//
+//        int last_order=dataIO.getLastOrder();
+//        Map<String, Object> orderList = DataIO.YmlReader.readYml( "./plugins/glaysiashop/market.yml");
+//        orderList = (Map<String, Object>) orderList.get("glaysiashop");
+//        orderList = (Map<String, Object>) orderList.get("Order");
+//        for(int i=1;i<=last_order;i++){
+//            Map<String, Object> spOrder = (Map<String, Object>) orderList.get(String.valueOf(i));
+//            this.list.add(new Trade.Order(i, (Date)spOrder.get("date"), (Double)spOrder.get("price"), (int)spOrder.get("amount"), (Double)spOrder.get("price_per_amount"), (String)spOrder.get("trader"), (Material) spOrder.get("material"), (Boolean)spOrder.get("is_selling"),
+//                    (Boolean)spOrder.get("is_canceled"), (Boolean)spOrder.get("is_complete"), (Boolean)spOrder.get("is_there_error")));
+//        }
 
-        int last_order=dataIO.getLastOrder();
-        Map<String, Object> orderList = DataIO.YmlReader.readYml( "./plugins/glaysiashop/market.yml");
-        orderList = (Map<String, Object>) orderList.get("glaysiashop");
-        orderList = (Map<String, Object>) orderList.get("Order");
-        for(int i=1;i<=last_order;i++){
-            Map<String, Object> spOrder = (Map<String, Object>) orderList.get(String.valueOf(i));
-            this.list.add(new Trade.Order(i, (Date)spOrder.get("date"), (Double)spOrder.get("price"), (int)spOrder.get("amount"), (Double)spOrder.get("price_per_amount"), (String)spOrder.get("trader"), (Material) spOrder.get("material"), (Boolean)spOrder.get("is_selling"),
-                    (Boolean)spOrder.get("is_canceled"), (Boolean)spOrder.get("is_complete"), (Boolean)spOrder.get("is_there_error")));
-        }
+        this.list=dataIO.getOrderList();
 
-
-        List<Integer> list_idx_for_remove = new ArrayList<>();
-        int idx=0;
+//        List<Integer> list_idx_for_remove = new ArrayList<>();
+//        int idx=0;
         this.list.removeIf(i -> (
                 ((!i.isMaterial(material)) || i.is_canceled || i.is_completed || i.is_there_error)
         ));
@@ -223,6 +220,7 @@ public class Trade {
     public Trade(){
 
     }
+
     public Trade(Economy econ){
         this.econ=econ;
     }

@@ -93,7 +93,9 @@ public class DoneOrder implements CommandExecutor {
     private void show(){
 
         Trade trade =new Trade();
+
         trade.setOrderListToBeDone(sender.getName());
+
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage(trade.doneMessage);
 

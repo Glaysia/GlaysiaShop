@@ -178,10 +178,38 @@ public class DataIO {
         key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
         List<Trade.Order> list = new LinkedList<>();
-
+        Material m;// = Material.getMaterial((String) key_is_date_price_amount_etc.get("material"));
+//        m = (m == null) ? Material.RED_MUSHROOM : m;
         for(String key : key_is_id.keySet()){
             Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
-            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), (Material) item.get("material"), (Boolean)item.get("is_selling"),
+
+            m=Material.getMaterial((String)item.get("material"));
+            m = (m == null) ? Material.RED_MUSHROOM : m;
+            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), m , (Boolean)item.get("is_selling"),
+                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
+        }
+        return list;
+    }
+
+    List<Trade.Order> getOrderList(){
+        Map<String, Object> key_is_glaysiashop;
+        key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
+
+        Map<String, Object> key_is_DIAMOND_Order;
+        key_is_DIAMOND_Order = (Map<String, Object>) (key_is_glaysiashop.get(header));
+
+        Map<String, Object> key_is_id;
+        key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("Order"));
+
+        List<Trade.Order> list = new LinkedList<>();
+        Material m;// = Material.getMaterial((String) key_is_date_price_amount_etc.get("material"));
+//        m = (m == null) ? Material.RED_MUSHROOM : m;
+        for(String key : key_is_id.keySet()){
+            Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
+
+            m=Material.getMaterial((String)item.get("material"));
+            m = (m == null) ? Material.RED_MUSHROOM : m;
+            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), m , (Boolean)item.get("is_selling"),
                     (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
         }
         return list;
@@ -197,10 +225,11 @@ public class DataIO {
         Map<String, Object> key_is_id = new LinkedHashMap<>();
         key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("Order"));
 
-        Map<String, Object> key_is_date_price_amount__ = new LinkedHashMap<>();
+        Map<String, Object> key_is_date_price_amount_etc = new LinkedHashMap<>();
 
-        key_is_date_price_amount__ = (Map<String, Object>) (key_is_id.get(Integer.toString(order_id)));
-        Material m = Material.getMaterial((String) key_is_date_price_amount__.get("material"));
+        key_is_date_price_amount_etc = (Map<String, Object>) (key_is_id.get(Integer.toString(order_id)));
+
+        Material m = Material.getMaterial((String) key_is_date_price_amount_etc.get("material"));
         m = (m == null) ? Material.RED_MUSHROOM : m;
 //        var tmp =
 //        double ppa = 3.141592;
@@ -209,17 +238,17 @@ public class DataIO {
 //        }
         Trade.Order order = new Trade.Order(
                 order_id,
-                (Date) key_is_date_price_amount__.get("date"),
-                (Double) key_is_date_price_amount__.get("price"),
-                (Integer) key_is_date_price_amount__.get("amount"),
-                (Double) key_is_date_price_amount__.get("price_per_amount"),
-                (String) key_is_date_price_amount__.get("trader"),
+                (Date) key_is_date_price_amount_etc.get("date"),
+                (Double) key_is_date_price_amount_etc.get("price"),
+                (Integer) key_is_date_price_amount_etc.get("amount"),
+                (Double) key_is_date_price_amount_etc.get("price_per_amount"),
+                (String) key_is_date_price_amount_etc.get("trader"),
                 m
         );
 //        order.is_selling= (boolean) key_is_date_price_amount__.get("is_selling");
-        order.is_canceled = (Boolean) key_is_date_price_amount__.get("is_canceled");
-        order.is_completed = (Boolean) key_is_date_price_amount__.get("is_complete");
-        order.is_there_error = (Boolean) key_is_date_price_amount__.get("is_there_error");
+        order.is_canceled = (Boolean) key_is_date_price_amount_etc.get("is_canceled");
+        order.is_completed = (Boolean) key_is_date_price_amount_etc.get("is_complete");
+        order.is_there_error = (Boolean) key_is_date_price_amount_etc.get("is_there_error");
 
         return order;
     }
