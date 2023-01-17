@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DataIO {
     private String USERDATAFILENAME= "./plugins/glaysiashop/userdata.yml";
@@ -167,19 +168,17 @@ public class DataIO {
 //        return lastOrder;
 //    }
     List<Trade.Order> getDoneOrderList(){
-        Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
+        Map<String, Object> key_is_glaysiashop;
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
 
-        Map<String, Object> key_is_DIAMOND_Order = new LinkedHashMap<>();
+        Map<String, Object> key_is_DIAMOND_Order;
         key_is_DIAMOND_Order = (Map<String, Object>) (key_is_glaysiashop.get(header));
 
-        Map<String, Object> key_is_id = new LinkedHashMap<>();
-        key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
+        Map<String, Trade.Order> key_is_id;
+        key_is_id = (Map<String, Trade.Order>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
-        LinkedList<Trade.Order> list = new LinkedList<>();
-        for(String key : key_is_id.keySet()){
-            list.add(getDoneOrder(Integer.parseInt(key)));
-        }
+        List<Trade.Order> list = new ArrayList<>(key_is_id.values());
+
         return list;
     }
 
