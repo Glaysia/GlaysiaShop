@@ -535,7 +535,9 @@ public class AmountSelector implements CommandExecutor {
 //        });
 
         Trade trade = new Trade(sender.getName());
+
         List<Trade.Order> myList = trade.getList();
+
         sender.sendMessage("mylist: "+myList.toString());
         MyLabel backToPallete = new MyLabel(2,5,1,1,Font.RED, "Q", myOrderListGui, "아이템선택창으로 돌아가기");
         MyLabel goToAmountselector = new MyLabel(3,5,1,1,Font.STONE, "R", myOrderListGui, "거래요청 창으로 가기");
@@ -954,9 +956,10 @@ public class AmountSelector implements CommandExecutor {
         }
 
         private void setSellBuyOrder(){
-            orderList_sellOnly=new ArrayList<>(orderList);
+            orderList_sellOnly=new LinkedList<>(orderList);
             orderList_sellOnly.removeIf(i -> !(i.is_selling));
-            orderList_buyOnly=new ArrayList<>(orderList);
+
+            orderList_buyOnly=new LinkedList<>(orderList);
             orderList_buyOnly.removeIf(i -> (i.is_selling));
         }
 
