@@ -44,6 +44,20 @@ public class Trade {
             this.is_selling=(price>=0);
         }
 
+        public Order(int order_id, Date date, double price, int amount, double pricePerAmount, String trader, Material material, boolean is_selling, boolean is_canceled, boolean is_complete, boolean is_there_error){
+            this.order_id=order_id;
+            this.date=date;
+            this.price=price;
+            this.amount=amount;
+            this.pricePerAmount=pricePerAmount;
+            this.trader=trader;
+            this.material=material;
+            this.is_selling=(price>=0);
+            this.is_canceled = is_canceled;
+            this.is_completed = is_complete;
+            this.is_there_error = is_there_error;
+        }
+
         public final int order_id;            //거래번호 불변
         public final Date date;                 //거래시간 불변
         public final double price;               //가격 음수면 구매요청, 양수면 판매요청

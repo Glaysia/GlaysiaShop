@@ -174,11 +174,19 @@ public class DataIO {
         Map<String, Object> key_is_DIAMOND_Order;
         key_is_DIAMOND_Order = (Map<String, Object>) (key_is_glaysiashop.get(header));
 
-        Map<String, Trade.Order> key_is_id;
-        key_is_id = (Map<String, Trade.Order>) (key_is_DIAMOND_Order.get("DoneOrder"));
+        Map<String, Object> key_is_id;
+        key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
-        List<Trade.Order> list = new ArrayList<>(key_is_id.values());
+        List<Trade.Order> list = new LinkedList<>();
 
+        for(String key : key_is_id.keySet()){
+            Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
+            list.add(
+                    new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"),
+                    (Double)item.get("price_per_amount"), (String)item.get("trader"), (Material)item.get("material"), (Boolean)item.get("is_selling"),
+                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error"))
+            );
+        }
         return list;
     }
 
