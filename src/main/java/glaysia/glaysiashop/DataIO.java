@@ -167,7 +167,7 @@ public class DataIO {
 //        int lastOrder = (Integer) (((Map<String, Object>) (key_is_DIAMOND_Order.get(dummy))).size());
 //        return lastOrder;
 //    }
-    List<Trade.Order> getDoneOrderList(){
+    List<Map<String, Object>> getDoneOrderList(){
         Map<String, Object> key_is_glaysiashop;
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
 
@@ -177,15 +177,11 @@ public class DataIO {
         Map<String, Object> key_is_id;
         key_is_id = (Map<String, Object>) (key_is_DIAMOND_Order.get("DoneOrder"));
 
-        List<Trade.Order> list = new LinkedList<>();
+        List<Map<String, Object>> list = new LinkedList<>();
 
         for(String key : key_is_id.keySet()){
             Map<String, Object> item = (Map<String, Object>) key_is_id.get(key);
-            list.add(
-                    new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"),
-                    (Double)item.get("price_per_amount"), (String)item.get("trader"), (Material)item.get("material"), (Boolean)item.get("is_selling"),
-                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error"))
-            );
+            list.add(item);
         }
         return list;
     }

@@ -165,10 +165,10 @@ public class Trade {
 //            this.list.add(dataIO.getDoneOrder(i));
 //        }
 //
-        this.list=dataIO.getDoneOrderList();
+        List<Map<String, Object>> list =dataIO.getDoneOrderList();
 
-        this.list.removeIf(i -> (
-                ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
+        list.removeIf(i -> (
+                (!i.get("trader").equals(traderName)|| (Boolean)i.get("is_canceled") || (Boolean)i.get("is_completed") || (Boolean)i.get("is_there_error"))
         ));
 
         for(Trade.Order i : this.list){
