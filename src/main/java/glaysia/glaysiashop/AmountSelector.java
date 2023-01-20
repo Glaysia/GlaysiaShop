@@ -118,7 +118,14 @@ public class AmountSelector implements CommandExecutor {
         public void setAmount(int amount){
             this.item.setAmount(amount);
         }
+        public void setShowname(String showname){
+//            this.clear();
 
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName(showname);
+            item.setItemMeta(itemMeta);
+//            this.addItem(new GuiItem(item));
+        }
 
     }
 

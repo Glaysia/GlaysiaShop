@@ -136,6 +136,7 @@ public class Trade {
 
         return outOrder;
     }
+    @Deprecated
     Trade(int order_id){
         Order order = null;
         order=ReadFromDB(order_id);       //주문번호를 통해 DB에 접근하여 데이터를 꺼내옴
@@ -233,6 +234,7 @@ public class Trade {
 //        playerForDebug.sendMessage("orderList: "+list.toString());
     }
 
+    @Deprecated
     public int getAvailOrderNumberPerUser(String userName){
         DataIO dataIO = new DataIO();
         int last=dataIO.getLastOrder();

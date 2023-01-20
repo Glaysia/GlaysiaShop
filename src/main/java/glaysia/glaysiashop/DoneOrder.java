@@ -95,7 +95,7 @@ public class DoneOrder implements CommandExecutor {
         Trade trade =new Trade();
 
         trade.setOrderListToBeDone(sender.getName());
-        trade.setOrderListToBeBuyOnly();
+//        trade.setOrderListToBeBuyOnly();
 
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage(trade.doneMessage);
@@ -113,6 +113,7 @@ public class DoneOrder implements CommandExecutor {
 
                 tmp=new AmountSelector.MyPane(col,row,1,1,(myList.get(idx).material), myList.get(idx), gui);
                 tmp.setAmount(myList.get(idx).amount);
+                tmp.setShowname(myList.get(idx).is_selling?"판매요청이었습니다 SHIFT_LEFT로 지울 수 있습니다"+myList.get(idx).toString():"구매요청이었습니다 SHIFT_LEFT로 받을 수 있습니다.");
                 myPanes.add(tmp);
                 idx++;
             }
@@ -131,7 +132,7 @@ public class DoneOrder implements CommandExecutor {
                         String message="";
 
                         if(!click.equals("SHIFT_LEFT")){
-                            message = "시프트 눌러서 한 번에 가져가셈\n"+info;
+                            message = "SHIFT_LEFT 눌러서 한 번에 가져가셈\n"+info;
                             preventTakeItem(inventoryClickEvent, gui);
 //                            addItemToInventoryWhenCancelTrade(i.order, getEconomy());
                             inventoryClickEvent.getInventory().close();
