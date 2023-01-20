@@ -28,7 +28,6 @@ public class GlaysiaGui implements CommandExecutor {
 
     private Economy econ;
     GlaysiaGui(Economy econ){
-
         this.econ=econ;
     }
     @Override
@@ -39,32 +38,33 @@ public class GlaysiaGui implements CommandExecutor {
         this.label=label;
         this.args=args;
 
-
         if (sender instanceof Player) { //명령어를 사용자가 입력했으면
-
             boolean isNotTrading=isNotTrading()&&(new Date().getTime()-time>=10000);
             sender.sendMessage(Long.toString(new Date().getTime()-time));
+
             if(isNotTrading){
                 command();
                 time = new Date().getTime();
+                return true;
             }else{
                 try {
                     sender.sendMessage(tradingPlayer.getName()+"님이 거래중입니다. 잠시만 기다려주세요.");
                 }catch (Exception e){
-                    sender.sendMessage(e+"ㅎㅎ");
+                    sender.sendMessage(e+"1초 후에 다시 해봐요");
                 }
+                return false;
             }
 
-            return true;
         }
         else if (sender instanceof ConsoleCommandSender) {
             //콘솔창에서 사용한 경우
             sender.sendMessage("콘솔에서는 사용할 수 없습니다.");
 
             return false;
+        }else{
+            return false;
         }
 
-        return false;
     }
 
     void command(){
@@ -76,8 +76,6 @@ public class GlaysiaGui implements CommandExecutor {
                 .show((Predicate<Material>)materialPredicate) //decide what items are displayed(e.g. flammable only)
                 .as(this::getDisplayItem) //how should the displayed materials look? Pass a Function<Material, GuiItem>
                 .build();
-
-
 
         itemPaletteGUI.show((Player)sender);
     }
@@ -103,10 +101,6 @@ public class GlaysiaGui implements CommandExecutor {
 //            player.sendMessage(String.format(ChatColor.BLUE + "당신이 고른 것 %s!", material));
             AmountSelector amountSelector=new AmountSelector(econ);
             player.closeInventory();
-
-//            ((Player)sender).closeInventory();
-
-//            ChestGui gui = new ChestGui(6, "거래요청§8§lR§r 창");
 
             amountSelector.onCommand(sender, command, label, args, material);
 

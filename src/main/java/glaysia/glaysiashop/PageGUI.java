@@ -61,17 +61,18 @@ public class PageGUI extends MyChestGui {
     }
     private void setGUIToAskingOrder(@NotNull Material material){
         this.material = material;
-        setGUIToAskingOrder();
+        this.setGUIToAskingOrder();
     }
     /** 아이템선택 창으로 이동하기 */
     private void setGUIToPallete(){
-        this.player.closeInventory();
         this.itemPaletteGUI.show(player);
+//        this.player.closeInventory();
     }
 
     /** 거래요청 창으로 이동하기 */
     private void setGUIToAskingOrder(){
         this.setTitleToAskingOrder();
+        this.show(player);
 //        this.paginatedPane.clear();
         paginatedPane = new PaginatedPane(0,0,9,6);
         player.sendMessage(String.format("당신이 고른 것은 %s입니다.", material));
@@ -79,15 +80,15 @@ public class PageGUI extends MyChestGui {
         MyPane tradingItemPane = new MyPane(2, 3, 1, 1, material,"거래품목");
         tradingItemPane.preventTakeItemOnly(this);
 
-        moneyLabel          = new MyLabel(1,0,7,1,Font.BIRCH_PLANKS,"0010000",  "가격");
-        sign                = new MyLabel(0,0,1,1,Font.SPRUCE_PLANKS,"+",        "부호");
-        MyLabel unit                = new MyLabel(8,0,1,1,Font.SPRUCE_PLANKS,"$",        "$");
-        sell                = new MyLabel(0,1,1,1,Font.SPRUCE_PLANKS,"S",        "판매요청");
-        amountItem10 = new MyLabel(3,3,1,2,Font.BIRCH_PLANKS,"64",       "거래개수");
-        MyLabel incrementItem10         = new MyLabel(4,3,1,1,Font.RED,         "+",        "10개 증가");
-        MyLabel incrementItem1          = new MyLabel(4,4,1,1,Font.PINK,        "+",        "1개 증가");
-        MyLabel decrementItem10         = new MyLabel(5,3,1,1,Font.BLUE,        "-",        "10개 감소");
-        MyLabel decrementItem1          = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,  "-",        "1개 감소");
+        moneyLabel                  = new MyLabel(1,0,7,1,Font.BIRCH_PLANKS,"0010000",  "가격");
+        sign                        = new MyLabel(0,0,1,1,Font.BIRCH_PLANKS,"+",        "부호");
+        MyLabel unit                = new MyLabel(8,0,1,1,Font.BIRCH_PLANKS,"$",        "$");
+        sell                        = new MyLabel(0,1,1,1,Font.BIRCH_PLANKS,"S",        "판매요청");
+        amountItem10                = new MyLabel(3,3,1,2,Font.BIRCH_PLANKS,"64",       "거래개수");
+        MyLabel incrementItem10     = new MyLabel(4,3,1,1,Font.RED,         "+",        "10개 증가");
+        MyLabel incrementItem1      = new MyLabel(4,4,1,1,Font.PINK,        "+",        "1개 증가");
+        MyLabel decrementItem10     = new MyLabel(5,3,1,1,Font.BLUE,        "-",        "10개 감소");
+        MyLabel decrementItem1      = new MyLabel(5,4,1,1,Font.LIGHT_BLUE,  "-",        "1개 감소");
         MyLabel confirm1            = new MyLabel(6,4,1,1,Font.LIGHT_BLUE,  "C",        "거래요청하기");
         MyLabel confirm2_blue       = new MyLabel(7,4,1,1,Font.BLUE,        "C",        "거래요청확정하기(취소가능)");
         MyLabel confirm2_gray       = new MyLabel(7,4,1,1,Font.LIGHT_GRAY,  "C",        "..");
@@ -126,6 +127,7 @@ public class PageGUI extends MyChestGui {
 
         this.addPlusMinusButtonToPaginatedPane(0, incrementMoney);
         this.addPlusMinusButtonToPaginatedPane(0, decrementMoney);
+
         this.askingOrderClickEvent(confirm1, confirm2_blue, confirm2_gray, incrementItem10, incrementItem1, decrementItem10, decrementItem1, incrementMoney, decrementMoney);
         this.addPane(paginatedPane);
         this.update(player, econ);
@@ -196,13 +198,14 @@ public class PageGUI extends MyChestGui {
         this.setTitleToMyShoppingBook();
         this.paginatedPane.clear();
 
-        Trade trade = new Trade(player.getName());
-        List<Trade.Order> myList = trade.getList();
-        player.sendMessage("my shopping list: " + myList.toString());
+        Trade trade = new Trade();
+        trade.setOrderListToUnDoneByPlayer(player.getName());
+        MyShoppingList = trade.getList();
+        player.sendMessage("my shopping list: " + MyShoppingList.toString());
 
         List<MyPane> myPanes = new LinkedList<>();
 
-        int max_idx = myList.toArray().length;
+        int max_idx = this.getMyShoppingListAndGetSizeOfList();
         MyPane nextPage = new MyPane(8,5,1,1,Material.ACACIA_BUTTON,"다음 페이지로");
         MyPane backPage = new MyPane(0,5,1,1,Material.ACACIA_BUTTON,"이전 페이지로");
         MyPane air      = new MyPane(7,5,1,1,Material.ACACIA_BOAT, "보이면 오류");
@@ -210,7 +213,8 @@ public class PageGUI extends MyChestGui {
         air.setVisible(true);
 
         k = 3+n;
-        m = this.getMyShoppingListAndGetSizeOfList()/45;
+        m = max_idx/45;
+
         int idx=0;
         for(int i=0;i<=m;i++){
             this.addUnderBarButtonToPage(k+i);
@@ -220,7 +224,7 @@ public class PageGUI extends MyChestGui {
                 for(int col=0;col<9;col++){
                     if(idx==max_idx)
                         break;
-                    tmp=new MyPane(col,row,1,1,(this.shoppingList.get(idx).material), this.shoppingList.get(idx), this.shoppingList.get(idx).toString());
+                    tmp=new MyPane(col,row,1,1,(this.MyShoppingList.get(idx).material), this.MyShoppingList.get(idx), this.MyShoppingList.get(idx).toString());
                     tmp.setAmount(this.MyShoppingList.get(idx).amount);
                     myPanes.add(tmp);
                     paginatedPane.addPane(k+i, tmp);
@@ -237,16 +241,16 @@ public class PageGUI extends MyChestGui {
     }
 
     private int getShoppingListAndGetSizeOfList(){
-        trade.setOrderListToAll();
+        trade.setOrderListToUnDone();
         this.shoppingList=trade.getList();
         return this.shoppingList.size();
     }
 
     private int getMyShoppingListAndGetSizeOfList(){
-        trade=new Trade(player.getName());
-//        trade.setOrderListToAll();
+        trade=new Trade();
+        trade.setOrderListToUnDoneByPlayer(this.player.getName());
         this.MyShoppingList=trade.getList();
-        return this.shoppingList.size();
+        return this.MyShoppingList.size();
     }
     
     /** 각 창에서 사용하는 언더바 버튼클릭이벤트 */
@@ -357,7 +361,7 @@ public class PageGUI extends MyChestGui {
         confirm2_blue.setOnClick(
                 inventoryClickEvent -> {
 
-                    Trade trade_s = new Trade(econ);
+                    Trade trade = new Trade(econ);
                     boolean isPlus=sign.getText().equals("+");
                     String sellOrBuy=(isPlus)?" 판매":" 구매";
                     double price = getMoney(isPlus);
@@ -367,39 +371,35 @@ public class PageGUI extends MyChestGui {
                     boolean item_is_enough_so_well_subtracted;// = setPlayersInventoryWhenTrade(amount);
                     if(isPlus){
                         money_is_enough_so_well_withdrawed=false;
-                        item_is_enough_so_well_subtracted=trade_s.subPlayersInventoryWhenTrade(player, material, amount);
+                        item_is_enough_so_well_subtracted=trade.subPlayersInventoryWhenTrade(player, material, amount);
+
                     }else{
-                        money_is_enough_so_well_withdrawed=trade_s.setPlayersMoneyWhenTrade(player,  price, isPlus);
+                        money_is_enough_so_well_withdrawed=trade.setPlayersMoneyWhenTrade(player,  price, isPlus);
                         item_is_enough_so_well_subtracted=false;
                     }
 
                     double pricePerAmount = price/amount;
-                    Trade nullTrade = new Trade();
+
                     String message = isPlus?"아이템이 부족합니다":"돈이 부족합니다.";
 
-                    if(nullTrade.getAvailOrderNumberPerUser(player.getName())>220){
-                        player.sendMessage("현재 거래 개수 제한이 220개입니다.추후에 늘릴게요");
-                    }
-
-                    else {
-                        if(isPlus){//판매
-                            if(item_is_enough_so_well_subtracted) {
-                                Trade trade = new Trade(price, amount, player.getName(), material, false);
-                                player.sendMessage("거래요청 확정됐습니다.");
-                            }
-                            else {
-                                player.sendMessage(message);
-                            }
-                        }else{  //구매
-                            if(money_is_enough_so_well_withdrawed){
-                                Trade trade = new Trade(price, amount, player.getName(), material, false);
-                                player.sendMessage("거래요청 확정됐습니다.");
-                            }else{
-                                player.sendMessage(message);
-                            }
+                    if(isPlus){//판매
+                        if(item_is_enough_so_well_subtracted) {
+                            trade.makeTrade(price, amount, player.getName(), material, false);
+                            player.sendMessage("거래요청 확정됐습니다.");
                         }
-
+                        else {
+                            player.sendMessage(message);
+                        }
+                    }else{  //구매
+                        if(money_is_enough_so_well_withdrawed){
+                            trade.makeTrade(price, amount, player.getName(), material, false);
+                            player.sendMessage("거래요청 확정됐습니다.");
+                        }else{
+                            player.sendMessage(message);
+                        }
                     }
+
+
 
                     confirm2_gray.setVisible(true);
                     confirm2_gray.setPriority(Pane.Priority.HIGH);
@@ -587,8 +587,8 @@ public class PageGUI extends MyChestGui {
         }
         player.sendMessage(message);
     }
-    private void clickEventForBuyOrder(MyPane i, InventoryClickEvent inventoryClickEvent){
-        player.sendMessage("testttttttt");
+    public void clickEventForBuyOrder(MyPane i, InventoryClickEvent inventoryClickEvent){
+        player.sendMessage("clickEventForBuyOrder");
         String info = i.order.toString();
         String click = inventoryClickEvent.getClick().toString();
         String message;
@@ -674,7 +674,7 @@ public class PageGUI extends MyChestGui {
         return Integer.parseInt(this.amountItem10.getText());
     }
     public void main(Material material){
-        setGUIToAskingOrder(material);
+        this.setGUIToAskingOrder(material);
         this.show(player);
     }
     public static void preventTakeItem(InventoryClickEvent inventoryClickEvent, MyChestGui gui) {
@@ -787,13 +787,13 @@ public class PageGUI extends MyChestGui {
     private class PlusMinusButton{
         public MyLabel[] button = new MyLabel[7];
         private String[] name = {
-            "1의    자리(음수면 구매요청)",
-            "10의   자리(음수면 구매요청)",
-            "100의  자리(음수면 구매요청)",
-            "1000의 자리(음수면 구매요청)",
-            "10000의 자리(음수면 구매요청)",
+            "1000000의 자리(음수면 구매요청)",
             "100000의 자리(음수면 구매요청)",
-            "1000000의 자리(음수면 구매요청)"
+            "10000의 자리(음수면 구매요청)",
+            "1000의 자리(음수면 구매요청)",
+            "100의  자리(음수면 구매요청)",
+            "10의   자리(음수면 구매요청)",
+            "1의    자리(음수면 구매요청)"
         };
 
         PlusMinusButton(boolean isPlus){
@@ -839,7 +839,9 @@ public class PageGUI extends MyChestGui {
         /** 호가창 */
         AskPrice(PageGUI gui){
             this.gui=gui;
-            Trade trade = new Trade(material, (Player) player);
+//            Trade trade = new Trade(material, (Player) player);
+            Trade trade = new Trade();
+            trade.setOrderListToUnDoneByMaterial(material);
             orderList = trade.getList();
 
             this.setSellBuyOrder();
@@ -848,8 +850,8 @@ public class PageGUI extends MyChestGui {
             player.sendMessage("orderList_buyOnly: "+orderList_buyOnly.toString());
             MyPane tmp1, tmp2;
             for(int i=0;i<14;i++){
-                tmp1=new MyPane(sellXArray[i], sellYArray[i], 1,1, material,   "testdef");
-                tmp2=new MyPane(buyXArray[i], buyYArray[i], 1,1, material,   "testabc");
+                tmp1=new MyPane(sellXArray[i], sellYArray[i], 1,1, material,"testdef");
+                tmp2=new MyPane(buyXArray[i], buyYArray[i], 1,1, material,"testabc");
                 orderPanes_sellOnly.add(tmp1);
                 orderPanes_buyOnly.add(tmp2);
                 paginatedPane.addPane(1,tmp1);
@@ -877,62 +879,15 @@ public class PageGUI extends MyChestGui {
             for(MyPane i : orderPanes_sellOnly){
                 i.setOnClick(
                         inventoryClickEvent -> {
-                            String info = i.order.toString();
-                            String click = inventoryClickEvent.getClick().toString();
-                            String message;
-                            Trade i_trade = new Trade(player, i.order, econ);
-
-                            if(click.equals("LEFT")){
-                                message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
-                                preventTakeItem(inventoryClickEvent, gui);
-                            }else if(click.equals("RIGHT")){
-                                if(i_trade.enoughMoney(player)) {
-                                    addItemToInventoryWhenCancelTrade(i.order);
-
-                                    message = "거래가 완료됐습니다. 환불은 안됨 " + info;
-                                    i.setVisible(false);
-                                    i.clear();
-                                }else{
-                                    message = "돈이 모자란데요?";
-                                    preventTakeItem(inventoryClickEvent, gui);
-                                }
-                                gui.update(player, econ);
-                            }else{
-                                message="우클릭은 거래승낙, 좌클릭은 정보출력";
-                                preventTakeItem(inventoryClickEvent, gui);
-                            }
-                            player.sendMessage(message);
+                            clickEventForSellOrder(i,inventoryClickEvent);
                         }
                 );
             }
-//            askOrderBookGui.update(player, econ);
+//            askOrderBookGui.update(player, econ);;
             for(MyPane i : orderPanes_buyOnly){
                 i.setOnClick(
                         inventoryClickEvent -> {
-                            String info = i.order.toString();
-                            String click = inventoryClickEvent.getClick().toString();
-                            String message;
-                            Trade i_trade = new Trade(player, i.order, econ);
-
-                            if(click.equals("LEFT")){
-                                message="거래요청에 응하시겠습니까? 우클릭을 누르면 거래완료됩니다."+info;
-                                preventTakeItem(inventoryClickEvent, gui);
-                            }else if(click.equals("RIGHT")){
-                                if(i_trade.enoughItemSoPaid(player)) {
-                                    message = "거래가 완료됐습니다. 환불은 안됨 " + info;
-                                    i.setVisible(false);
-                                    i.clear();
-                                }else{
-                                    message = "아이템이 모자란데요?";
-                                    preventTakeItem(inventoryClickEvent, gui);
-                                }
-//                                askOrderBookGui.update(player, econ);
-                            }else{
-                                message="우클릭은 거래승낙, 좌클릭은 정보출력";
-                                preventTakeItem(inventoryClickEvent, gui);
-                            }
-
-                            player.sendMessage(message);
+                            clickEventForBuyOrder(i,inventoryClickEvent);
                         }
                 );
             }

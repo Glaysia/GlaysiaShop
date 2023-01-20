@@ -4,7 +4,6 @@ import java.io.*;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
@@ -12,11 +11,10 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DataIO {
     private String USERDATAFILENAME= "./plugins/glaysiashop/userdata.yml";
-    private String MARKETFILENAME= "./plugins/glaysiashop/market.yml";
+    public String MARKETFILENAME= "./plugins/glaysiashop/market.yml";
     private static String header = "glaysiashop";
     private static String dummy = "DIAMOND";
     private Player player = null;
@@ -184,13 +182,17 @@ public class DataIO {
 
             m=Material.getMaterial((String)item.get("material"));
             m = (m == null) ? Material.RED_MUSHROOM : m;
-            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), m , (Boolean)item.get("is_selling"),
-                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
+            list.add(
+                    new Trade.Order(
+                        Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"),
+                        (String)item.get("trader"), m , (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")
+                    )
+            );
         }
         return list;
     }
 
-    List<Trade.Order> getOrderList(){
+    List<Trade.Order> getUnDoneOrderList(){
         Map<String, Object> key_is_glaysiashop;
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
 
@@ -208,12 +210,16 @@ public class DataIO {
 
             m=Material.getMaterial((String)item.get("material"));
             m = (m == null) ? Material.RED_MUSHROOM : m;
-            list.add(new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"), (Double)item.get("price_per_amount"), (String)item.get("trader"), m , (Boolean)item.get("is_selling"),
-                    (Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")));
+            list.add(
+                    new Trade.Order(Integer.parseInt(key), (Date)item.get("date"), (Double)item.get("price"), (int)item.get("amount"),
+                    (String)item.get("trader"), m ,(Boolean)item.get("is_canceled"), (Boolean)item.get("is_complete"), (Boolean)item.get("is_there_error")
+                    )
+            );
         }
         return list;
     }
 
+    @Deprecated//폐기 예정
     List<Trade.Order> getAllOrderList(){
         Map<String, Object> key_is_glaysiashop = new LinkedHashMap<>();
         key_is_glaysiashop = YmlReader.readYml(MARKETFILENAME);
@@ -484,6 +490,7 @@ public class DataIO {
             if (last < order_id) {
                 last = order_id;
             }
+
             String key_for_key_is_DIAMOND_ORDER=isDone?"DoneOrder":"Order";
             String key_for_key_is_dummy=isDone?"last_done_order":"last_order";
 

@@ -95,6 +95,7 @@ public class DoneOrder implements CommandExecutor {
         Trade trade =new Trade();
 
         trade.setOrderListToBeDone(sender.getName());
+        trade.setOrderListToBeBuyOnly();
 
         List<Trade.Order> myList = trade.getList();
         sender.sendMessage(trade.doneMessage);

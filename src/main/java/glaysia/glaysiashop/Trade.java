@@ -33,6 +33,21 @@ public class Trade {
             this.material=material;
             this.is_selling=(price>=0);
         }
+        public Order(int order_id, Date date, double price, int amount,
+                     String trader, Material material, boolean is_canceled, boolean is_completed, boolean is_there_error){
+            this.order_id=order_id;
+            this.date=date;
+            this.price=price;
+            this.amount=amount;
+            this.pricePerAmount=price/amount;
+            this.trader=trader;
+            this.material=material;
+            this.is_selling=(price>=0);
+            this.is_canceled=is_canceled;
+            this.is_completed=is_completed;
+            this.is_there_error=is_there_error;
+        }
+
         public Order(int order_id, Date date, double price, int amount, double pricePerAmount, String trader, Material material){
             this.order_id=order_id;
             this.date=date;
@@ -72,12 +87,16 @@ public class Trade {
         }
     }
     private boolean is_saved;
-    public Trade(double price, int amount, String trader, Material material, boolean was_there_error){
-        String fileName="./plugins/glaysiashop/market.yml";
+//    public Trade(double price, int amount, String trader, Material material, boolean was_there_error){
+//
+//    }
+    public void makeTrade(double price, int amount, String trader, Material material, boolean was_there_error){
+        DataIO dataIO = new DataIO();
+        String fileName=dataIO.MARKETFILENAME;
+
         File dataFile = new File(fileName);
         FileConfiguration dataFileConfig = YamlConfiguration.loadConfiguration(dataFile);
 
-        DataIO dataIO = new DataIO();
         order_id = dataIO.getLastOrder()+1;
         Order order = new Order(
                 order_id,
@@ -89,8 +108,8 @@ public class Trade {
         );
 
         is_saved = dataIO.writeOrderToDB(order);
-
     }
+
     private boolean saveToDB(Map<String, Object> mainDataMap, File dataFile){
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -122,6 +141,7 @@ public class Trade {
         order=ReadFromDB(order_id);       //주문번호를 통해 DB에 접근하여 데이터를 꺼내옴
     }
     private List<Order> list=new LinkedList<>();
+    @Deprecated
     public Trade(String traderName){
         DataIO dataIO = new DataIO();
 //        this.list = new ArrayList<>();
@@ -131,8 +151,6 @@ public class Trade {
             this.list.add(dataIO.getOrder(i));
         }
 
-        List<Integer> list_idx_for_remove = new ArrayList<>();
-        int idx=0;
         this.list.removeIf(i -> (
                 ((!i.isMadeBy(traderName)) || i.is_canceled || i.is_completed || i.is_there_error)
         ));
@@ -155,12 +173,37 @@ public class Trade {
             doneMessage=doneMessage+" "+i.toString()+"\n";
         }
     }
-    public void setOrderListToAll(){
+    public void setOrderListToBeBuyOnly(){
+        this.list.removeIf(i->(
+                i.is_selling
+                ));
+
+    }
+    public void setOrderListToUnDone(){
         DataIO dataIO = new DataIO();
-        this.list=dataIO.getAllOrderList();
+//        this.list=dataIO.getAllOrderList();
+        this.list=dataIO.getUnDoneOrderList();
 
         this.list.removeIf(i -> (
                 (i.is_canceled || i.is_completed || i.is_there_error)
+        ));
+    }
+    public void setOrderListToUnDoneByMaterial(Material material){
+        DataIO dataIO = new DataIO();
+//        this.list=dataIO.getAllOrderList();
+        this.list=dataIO.getUnDoneOrderList();
+
+        this.list.removeIf(i -> (
+                (!(i.material.equals(material))|| i.is_canceled || i.is_completed || i.is_there_error)
+        ));
+    }
+    public void setOrderListToUnDoneByPlayer(String traderName){
+        DataIO dataIO = new DataIO();
+//        this.list=dataIO.getAllOrderList();
+        this.list=dataIO.getUnDoneOrderList();
+
+        this.list.removeIf(i -> (
+                (!i.isMadeBy(traderName)||i.is_canceled || i.is_completed || i.is_there_error)
         ));
     }
 
@@ -170,6 +213,7 @@ public class Trade {
 
     String doneMessage="지금까지 완료된 구매주문:\n";
 
+    @Deprecated
     public Trade(Material material, Player playerForDebug){
         DataIO dataIO = new DataIO();
 //        this.list = new ArrayList<>();
